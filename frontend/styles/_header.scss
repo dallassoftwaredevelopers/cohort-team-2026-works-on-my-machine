@@ -1,0 +1,25 @@
+@use "variables";
+@use "@coreui/coreui/scss/coreui";
+
+nav{
+  background-color: #fff;
+  color: #000;
+  gap: 40px;
+  display: flex;
+  justify-content: space-evenly;
+  padding: 0px 0;
+}
+
+nav ul{
+  background-color: #fff;
+  display: flex;
+  flex-direction: column;
+  visibility: visible;
+  position: relative;
+  top: 5rem;
+  gap: 30px;
+}
+
+.icon-close{
+  display: none;
+}
