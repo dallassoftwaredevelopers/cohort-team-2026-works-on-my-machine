@@ -1,6 +1,6 @@
-# Works on My Machine — MVP API Contract
+# Works on My Machine — MVP Data Access Contract
 
-**Version:** 1.0 (Draft)  
+**Version:** 1.1 (Draft)  
 **Date:** October 24, 2026  
 **Team:** CYC Cohort, Team 5  
 **Jira:** DC-18  
@@ -8,27 +8,31 @@
 
 ## 1. Overview
 
-This document defines the proposed API interfaces between the frontend and backend for manual invoice entry.
+This document defines the proposed data access operations and expected data formats for the manual invoice entry workflow.
 
-The implementation will build on the existing Next.js, CoreUI, and Supabase infrastructure, reusing available components wherever possible.
+The implementation will build on the existing Next.js, CoreUI, and Supabase infrastructure, reusing available components and database access patterns wherever possible.
 
-**Workflow:** Select Vendor → Select Property → Enter Reference Number → Enter Invoice Date → Enter Amount → Enter Due Date → Submit → Save Invoice
+**Manual entry workflow:**
 
-Invoice creation is separate from approval, rejection, and EasyPay.
+Select Vendor → Select Property → Enter Reference Number → Enter Invoice Date → Enter Amount → Enter Due Date → Submit → Save Invoice → Retrieve Invoice
+
+Invoice creation is separate from approval, rejection, and mock vendor payment. These additional workflows remain part of the overall MVP but are outside the scope of this contract.
+
+This contract describes required behavior rather than mandating custom REST API endpoints or specific function implementations.
 
 ## 2. Data Access Operations
 
 The manual invoice workflow requires the following database operations. The existing application uses the Supabase JavaScript client to interact with the database directly, so custom Next.js API routes are not necessarily required for basic data retrieval and invoice creation.
 
-| Operation               | Database Table | Purpose                                   | Jira  |
-| ----------------------- | -------------- | ----------------------------------------- | ----- |
-| `getAllVendors()`       | `vendors`      | Populate the vendor combobox              | DC-90 |
-| `getAllProperties()`    | `properties`   | Populate the property combobox            | DC-91 |
-| `createInvoice()`       | `invoices`     | Validate and save a new invoice           | DC-92 |
-| `getInvoice(invoiceId)` | `invoices`     | Retrieve a previously saved invoice by ID | DC-89 |
-| `getPropertyId()`       | `properties`   | Obtain the selected property's ID         | DC-88 |
+| Operation               | Database Table | Purpose                                               | Jira  |
+| ----------------------- | -------------- | ----------------------------------------------------- | ----- |
+| `getAllVendors()`       | `vendors`      | Retrieve vendors for selection on the invoice form    | DC-90 |
+| `getAllProperties()`    | `properties`   | Retrieve properties for selection on the invoice form | DC-91 |
+| `createInvoice()`       | `invoices`     | Validate and save a new invoice                       | DC-92 |
+| `getInvoice(invoiceId)` | `invoices`     | Retrieve a previously saved invoice by ID             | DC-89 |
+| `getPropertyId()`       | `properties`   | Obtain the selected property's ID                     | DC-88 |
 
-These names describe required operations, not necessarily separate functions that must be implemented.
+These names describe logical operations, not necessarily separate functions that must be implemented.
 
 ### Existing Implementation
 
@@ -36,7 +40,7 @@ The Properties page (`frontend/app/properties/page.tsx`) already retrieves recor
 
 This demonstrates an existing database access pattern that may be reused for the manual invoice form.
 
-The remaining operations have not yet been verified as implemented.
+The remaining operations have not yet been verified as implemented for the invoice workflow.
 
 ### Implementation Considerations
 
@@ -48,26 +52,32 @@ The remaining operations have not yet been verified as implemented.
 - Use server-side operations when privileged credentials or sensitive business logic require them.
 - Reuse the selected property's ID from `getAllProperties()` where available, rather than introducing an unnecessary database lookup.
 
-The implementation approach remains subject to team review..
+The implementation approach remains subject to team review.
 
-## 3. API Conventions
+## 3. Data Access Conventions
 
-- **Format:** JSON
-- **Authentication:** Existing application authentication
-- **Identifiers:** UUID
-- **Dates:** `YYYY-MM-DD`
-- **Success responses:** `200 OK`, `201 Created`
-- **Money:** USD
-- **Error responses:** Standard HTTP status codes with consistent JSON error objects
-- **Security:** Authenticate requests and authorize actions
+- **Format:** JSON-compatible data.
+- **Authentication:** Existing application authentication using Supabase Auth.
+- **Identifiers:** UUIDs for invoice, vendor, and property records.
+- **Dates:** `YYYY-MM-DD`.
+- **Success results:** Return requested records or saved record information.
+- **Money:** USD for the proposed MVP; confirm currency scope with the team.
+- **Error handling:** Handle Supabase errors consistently and provide meaningful feedback.
+- **Security:** Authenticate users and enforce authorization through appropriate Supabase RLS policies.
 
-## 4. Request and Response Formats
+Supabase JavaScript client operations typically return `data` and `error` values.
 
-### Get Vendors
+HTTP status codes remain relevant when using HTTP endpoints, but they are not the required application-level response contract for direct Supabase client operations.
 
-`GET /api/vendors`
+## 4. Data Input and Output Formats
 
-**Response: 200 OK**
+The following examples define expected data fields and logical operation results. They do not require separate REST endpoints.
+
+### Get Vendors — DC-90
+
+**Operation:** `getAllVendors()`
+
+**Expected data:**
 
 ```json
 [
@@ -78,13 +88,17 @@ The implementation approach remains subject to team review..
 ]
 ```
 
-Returns available vendors to populate the Vendor combobox.
+Returns available vendors to populate the Vendor selection field.
 
-### Get Properties
+Each vendor must provide an ID and a display name.
 
-`GET /api/properties`
+The operation should handle empty results and database errors appropriately.
 
-**Response: 200 OK**
+### Get Properties — DC-91
+
+**Operation:** `getAllProperties()`
+
+**Expected data:**
 
 ```json
 [
@@ -95,13 +109,29 @@ Returns available vendors to populate the Vendor combobox.
 ]
 ```
 
-Returns available properties to populate the Property combobox.
+Returns available properties to populate the Property selection field.
 
-### Save Invoice
+Each property must provide an ID and a display name.
 
-`POST /api/invoices`
+The selected property's ID should be retained for invoice creation.
 
-**Request:**
+### Get Property ID — DC-88
+
+**Operation:** `getPropertyId()`
+
+The invoice form requires the unique ID of the selected property.
+
+When `getAllProperties()` returns both the property ID and name, the application can retain the ID associated with the user's selection.
+
+A separate database lookup is not required if the ID is already available.
+
+Confirm with Josh whether a distinct `getPropertyId()` function is necessary.
+
+### Create Invoice — DC-92
+
+**Operation:** `createInvoice()`
+
+**Input data:**
 
 ```json
 {
@@ -114,7 +144,7 @@ Returns available properties to populate the Property combobox.
 }
 ```
 
-**Response: 201 Created**
+**Expected saved record information:**
 
 ```json
 {
@@ -123,17 +153,23 @@ Returns available properties to populate the Property combobox.
 }
 ```
 
-The backend checks the required fields, validates the vendor and property selections, and saves the invoice to Supabase.
+The application must validate the required fields and save the invoice to Supabase.
+
+The operation should return enough information to identify the saved invoice and confirm the result.
 
 Once saved, the frontend should display a confirmation message.
 
-New invoices are saved with a `pending` status. Approval and payment are handled separately.
+New invoices are saved with a `pending` status. Approval, rejection, and mock vendor payment are handled separately.
 
-### Retrieve Invoice
+The exact database operation and returned fields must be verified during implementation.
 
-`GET /api/invoices/{id}`
+### Retrieve Invoice — DC-89
 
-**Response: 200 OK**
+**Operation:** `getInvoice(invoiceId)`
+
+**Input:** Existing invoice UUID.
+
+**Expected data:**
 
 ```json
 {
@@ -148,22 +184,42 @@ New invoices are saved with a `pending` status. Approval and payment are handled
 }
 ```
 
-Returns the saved invoice using its ID. This allows the frontend to confirm the invoice was saved and retrieve it later.
+Returns a previously saved invoice using its unique ID.
+
+The frontend should be able to use this information to reopen or repopulate the invoice form.
+
+The operation must handle missing, invalid, or inaccessible invoice records appropriately.
 
 ## 5. Validation and Error Handling
 
+### Input Validation
+
 - Require a vendor and property selection.
 - Require a reference number, invoice date, and amount.
-- Due date is optional.
+- Allow the due date to be omitted.
 - Validate IDs, dates, and monetary amounts before saving.
-- Confirm the selected vendor and property exist and are accessible.
+- Confirm the selected vendor and property exist and are accessible to the current user.
+- Prevent invalid invoice amounts according to agreed business rules.
 - Save new invoices with status `pending`.
-- Display a confirmation after a successful save.
-- Show appropriate errors for missing fields or failed submissions.
-- Keep entered information available if saving fails.
-- Enforce authentication and authorization server-side.
 
-**Standard error response:**
+### User Feedback
+
+- Display a confirmation after a successful save.
+- Show meaningful errors for missing or invalid fields.
+- Show an appropriate error when a database operation fails.
+- Keep entered information available if saving fails.
+- Handle empty vendor and property lists.
+- Handle invoice records that cannot be found or accessed.
+
+### Database Error Handling
+
+Supabase client operations generally return a result containing `data` and `error`.
+
+The application should check the operation result before treating a database action as successful.
+
+Errors should be handled consistently and presented to users in understandable language.
+
+The following is an example of a proposed application-level validation error format, not a required native Supabase response:
 
 ```json
 {
@@ -174,34 +230,75 @@ Returns the saved invoice using its ID. This allows the frontend to confirm the 
 }
 ```
 
-Relevant status codes: `400`, `401`, `403`, `404`, `422`, `500`.
+The team should agree on how validation and database errors are represented in the UI.
+
+### Security
+
+- Require authentication for protected invoice operations.
+- Enforce database authorization using appropriate RLS policies.
+- Ensure users cannot access or modify records outside their permitted scope.
+- Do not rely exclusively on frontend validation or UI access restrictions.
+- Use server-side operations for privileged actions when necessary.
+
+Existing RLS policies should be reviewed before relying on them for authorization.
 
 ## 6. Integration Dependencies
 
-**Database:** The current schema requires `date`, `reference_number`, `vendor_id`, `property_id`, and `amount`.
+**Database — DC-15**
 
-**Manual Entry:** DC-90 (`getAllVendors()`), DC-91 (`getAllProperties()`), and DC-92 (`createInvoice()`) support the manual entry form.
+The current invoice schema requires `date`, `reference_number`, `vendor_id`, `property_id`, and `amount`.
 
-**Authorization:** Requests must follow the application's authentication and Supabase security policies. Database permissions should be reviewed before using real data.
+The `due_date` field is optional.
 
-**Implementation:** Next.js route handlers or appropriate Supabase operations can be used, provided the agreed request and response formats remain consistent.
+The database schema and field mappings should be confirmed before implementation.
+
+**Manual Entry — DC-88, DC-90, DC-91, DC-92**
+
+These tasks support property identification, vendor and property selection, and invoice creation.
+
+**Invoice Retrieval — DC-89**
+
+The application must retrieve saved invoices by their IDs to support the MVP save/reload workflow.
+
+**Authorization**
+
+Database operations must follow the application's authentication and Supabase security policies.
+
+Existing RLS policies require review to confirm that access restrictions match the team's intended permissions.
+
+**Implementation**
+
+The team should prefer existing Supabase data access patterns where appropriate.
+
+Custom Next.js route handlers may be introduced when there is a justified need, such as privileged server-side processing.
+
+The agreed data requirements and validation behavior should remain consistent regardless of implementation approach.
+
+**Approval and Mock Payment**
+
+Invoice approval, rejection, and payment through the fictional vendor website are separate workflows within the overall MVP.
+
+Their implementation requirements and authorization rules should be documented in their corresponding Jira issues.
 
 ## 7. Next Steps
 
-Review the proposed interfaces with the frontend and backend teams, confirm the field mappings against DC-15, and test the manual entry workflow using one fictional invoice.
+Review the proposed data operations with Josh and the frontend team, confirm field mappings against DC-15, and test the manual entry workflow using one fictional invoice.
 
 Confirm that:
 
-- DC-90 populates the Vendor combobox.
-- DC-91 populates the Property combobox.
+- DC-90 retrieves available vendors.
+- DC-91 retrieves available properties.
+- DC-88 provides the selected property ID without an unnecessary lookup.
 - DC-92 validates and saves the completed invoice.
 - The frontend displays a successful save confirmation.
-- Missing or invalid fields display an appropriate error.
-- A saved invoice can be retrieved by ID.
-- Approval and EasyPay remain separate from invoice creation.
+- Missing or invalid fields display appropriate errors.
+- DC-89 retrieves a saved invoice by ID.
+- A saved invoice can be reopened with the correct data.
+- Database authorization rules are reviewed and tested.
+- Approval, rejection, and mock vendor payment remain separate from invoice creation while supporting the overall MVP workflow.
 
-The priority is getting the manual entry form connected and saving invoices using the existing infrastructure.
+The immediate priority is connecting the manual invoice form to the existing database infrastructure and verifying that invoices can be saved and retrieved.
 
 ---
 
-_Draft for team review._
+_Draft for team review. Implementation details and security policies remain subject to confirmation._
