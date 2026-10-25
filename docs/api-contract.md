@@ -1,4 +1,3 @@
-
 # Works on My Machine — MVP API Contract
 
 **Version:** 1.0 (Draft)  
@@ -17,18 +16,39 @@ The implementation will build on the existing Next.js, CoreUI, and Supabase infr
 
 Invoice creation is separate from approval, rejection, and EasyPay.
 
-## 2. API Endpoints
+## 2. Data Access Operations
 
-| Method | Endpoint | Purpose |
-|---|---|---|
-| GET | `/api/vendors` | Populate the vendor combobox (DC-90) |
-| GET | `/api/properties` | Populate the property combobox (DC-91) |
-| POST | `/api/invoices` | Validate and save invoice (DC-92) |
-| GET | `/api/invoices/{id}` | Retrieve saved invoice |
+The manual invoice workflow requires the following database operations. The existing application uses the Supabase JavaScript client to interact with the database directly, so custom Next.js API routes are not necessarily required for basic data retrieval and invoice creation.
 
-The three backend functions are `getAllVendors()`, `getAllProperties()`, and `createInvoice()`.
+| Operation               | Database Table | Purpose                                   | Jira  |
+| ----------------------- | -------------- | ----------------------------------------- | ----- |
+| `getAllVendors()`       | `vendors`      | Populate the vendor combobox              | DC-90 |
+| `getAllProperties()`    | `properties`   | Populate the property combobox            | DC-91 |
+| `createInvoice()`       | `invoices`     | Validate and save a new invoice           | DC-92 |
+| `getInvoice(invoiceId)` | `invoices`     | Retrieve a previously saved invoice by ID | DC-89 |
+| `getPropertyId()`       | `properties`   | Obtain the selected property's ID         | DC-88 |
 
-These endpoints are proposed and subject to team review.
+These names describe required operations, not necessarily separate functions that must be implemented.
+
+### Existing Implementation
+
+The Properties page (`frontend/app/properties/page.tsx`) already retrieves records using the Supabase JavaScript client.
+
+This demonstrates an existing database access pattern that may be reused for the manual invoice form.
+
+The remaining operations have not yet been verified as implemented.
+
+### Implementation Considerations
+
+- Review existing functionality before implementing additional database operations.
+- Reuse existing Supabase client queries where appropriate.
+- Preserve the required input fields, output data, and validation rules.
+- Handle database errors and provide useful feedback.
+- Enforce access permissions through appropriate Supabase Row Level Security (RLS) policies.
+- Use server-side operations when privileged credentials or sensitive business logic require them.
+- Reuse the selected property's ID from `getAllProperties()` where available, rather than introducing an unnecessary database lookup.
+
+The implementation approach remains subject to team review..
 
 ## 3. API Conventions
 
@@ -89,7 +109,7 @@ Returns available properties to populate the Property combobox.
   "property_id": "c262217a-6b64-4f4a-ade4-23e26d94ec06",
   "reference_number": "INV-123",
   "date": "2026-10-24",
-  "amount": 425.00,
+  "amount": 425.0,
   "due_date": "2026-11-15"
 }
 ```
@@ -122,7 +142,7 @@ New invoices are saved with a `pending` status. Approval and payment are handled
   "property_id": "c262217a-6b64-4f4a-ade4-23e26d94ec06",
   "reference_number": "INV-123",
   "date": "2026-10-24",
-  "amount": 425.00,
+  "amount": 425.0,
   "due_date": "2026-11-15",
   "status": "pending"
 }
@@ -184,4 +204,4 @@ The priority is getting the manual entry form connected and saving invoices usin
 
 ---
 
-*Draft for team review.*
+_Draft for team review._
