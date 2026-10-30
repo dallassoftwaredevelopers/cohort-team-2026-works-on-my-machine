@@ -62,6 +62,13 @@ function validatedInvoice(input: Omit<InvoiceInput, "date">): { error: string } 
   } };
 }
 
+async function activeReferences(supabase: Awaited<ReturnType<typeof createClient>>, vendorId: string, propertyId: string) {
+  return Promise.all([
+    supabase.from("vendors").select("id").eq("id", vendorId).is("deleted_at", null).maybeSingle(),
+    supabase.from("properties").select("id").eq("id", propertyId).is("deleted_at", null).maybeSingle(),
+  ]);
+}
+
 export async function createInvoice(input: InvoiceInput): Promise<{ error: string } | undefined> {
   const supabase = await createClient();
   const { data } = await supabase.auth.getClaims();
@@ -70,6 +77,11 @@ export async function createInvoice(input: InvoiceInput): Promise<{ error: strin
   const validated = validatedInvoice(input);
   if ("error" in validated) return validated;
   if (typeof input.date !== "string" || !isoDate.test(input.date)) return { error: "Invalid invoice date." };
+
+  const [vendor, property] = await activeReferences(supabase, validated.values.vendor_id, validated.values.property_id);
+  if (vendor.error) return { error: vendor.error.message };
+  if (property.error) return { error: property.error.message };
+  if (!vendor.data || !property.data) return { error: "Choose an active vendor and property." };
 
   const { error } = await supabase.from("invoices").insert({
     ...validated.values,
@@ -88,11 +100,45 @@ export async function updateInvoice(id: string, input: Omit<InvoiceInput, "date"
   const validated = validatedInvoice(input);
   if ("error" in validated) return validated;
 
+  const { data: current, error: currentError } = await supabase.from("invoices")
+    .select("vendor_id, property_id")
+    .eq("id", id)
+    .is("deleted_at", null)
+    .maybeSingle();
+  if (currentError) return { error: currentError.message };
+  if (!current) return { error: "Invoice not found or archived." };
+
+  const [vendor, property] = await activeReferences(supabase, validated.values.vendor_id, validated.values.property_id);
+  if (vendor.error) return { error: vendor.error.message };
+  if (property.error) return { error: property.error.message };
+  if (!vendor.data && validated.values.vendor_id !== current.vendor_id) return { error: "Choose an active vendor." };
+  if (!property.data && validated.values.property_id !== current.property_id) return { error: "Choose an active property." };
+
   const { error } = await supabase.from("invoices")
     .update(validated.values)
     .eq("id", id)
+    .is("deleted_at", null)
     .select("id")
     .single();
   if (error) return { error: `Could not save invoice: ${error.message}` };
+  refresh();
+}
+
+export async function archiveInvoice(_prev: { error: string } | undefined, formData: FormData): Promise<{ error: string } | undefined> {
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getClaims();
+  if (!data?.claims) throw new Error("Unauthorized");
+
+  const id = String(formData.get("id") ?? "");
+  if (!uuid.test(id)) return { error: "Invalid invoice." };
+
+  const { error } = await supabase.from("invoices")
+    .update({ deleted_at: new Date().toISOString(), deleted_by: data.claims.sub })
+    .eq("id", id)
+    .is("deleted_at", null)
+    .select("id")
+    .single();
+  if (error) return { error: error.message };
+
   refresh();
 }

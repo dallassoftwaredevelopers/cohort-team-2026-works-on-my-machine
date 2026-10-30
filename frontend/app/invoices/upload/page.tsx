@@ -36,8 +36,8 @@ async function Uploader() {
   if (!data?.claims) redirect("/login?next=/invoices/upload");
 
   const [vendorResult, propertyResult] = await Promise.all([
-    supabase.from("vendors").select("id, name").order("name"),
-    supabase.from("properties").select("id, name").order("name"),
+    supabase.from("vendors").select("id, name").is("deleted_at", null).order("name"),
+    supabase.from("properties").select("id, name").is("deleted_at", null).order("name"),
   ]);
   if (vendorResult.error) throw vendorResult.error;
   if (propertyResult.error) throw propertyResult.error;
