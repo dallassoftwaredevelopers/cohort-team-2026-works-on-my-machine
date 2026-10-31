@@ -186,6 +186,9 @@
 }
 
 .actions :global(.btn) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-height: 3rem;
   min-width: 8rem;
   padding-inline: 1.2rem;
