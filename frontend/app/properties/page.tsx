@@ -2,8 +2,8 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
-import DeleteButton from "@/components/DeleteButton.client";
-import { deleteProperty } from "./actions";
+import ArchiveButton from "@/components/ArchiveButton.client";
+import { archiveProperty } from "./actions";
 import PropertyForm from "./PropertyForm.client";
 
 type Props = {
@@ -36,6 +36,7 @@ async function Properties({ searchParams }: Props) {
   const { data: properties, error } = await supabase
     .from("properties")
     .select("id, name, address")
+    .is("deleted_at", null)
     .order("name");
   if (error) throw error;
 
@@ -59,7 +60,7 @@ async function Properties({ searchParams }: Props) {
               </div>
               <div className="d-flex align-items-center gap-2">
                 <Link href={{ pathname: "/properties", query: { edit: property.id } }} className="btn btn-outline-secondary">Edit</Link>
-                <DeleteButton action={deleteProperty} id={property.id} name={property.name} />
+                <ArchiveButton action={archiveProperty} id={property.id} name={property.name} />
               </div>
             </li>)}
           </ul>

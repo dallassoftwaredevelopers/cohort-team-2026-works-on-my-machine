@@ -26,6 +26,7 @@ const nav: NavEntry[] = [
   { component: CNavItem, name: "Upload Invoice", to: "/invoices/upload", icon: <CIcon icon={cilCloudUpload} customClassName="nav-icon" /> },
   { component: CNavTitle, name: "Manage" },
   { component: CNavItem, name: "Properties", to: "/properties", icon: <CIcon icon={cilBuilding} customClassName="nav-icon" /> },
+  { component: CNavItem, name: "Vendors", to: "/vendors", icon: <CIcon icon={cilBuilding} customClassName="nav-icon" /> },
   {
     component: CNavGroup,
     name: "Users",
@@ -43,6 +44,8 @@ export const routeNames: Record<string, string> = {
   "/invoices": "Invoices",
   "/invoices/upload": "Upload Invoice",
   "/properties": "Properties",
+  "/vendors": "Vendors",
+  "/vendors/new": "Add Vendor",
   "/create-user": "Create User",
   "/reset-password": "Reset Password",
 };

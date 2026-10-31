@@ -100,7 +100,7 @@ Writes should go through a Server Action by default:
 import { refresh } from "next/cache";
 import { createClient } from "@/utils/supabase/server";
 
-export async function deleteProperty(_prev: FormState, formData: FormData): Promise<FormState> {
+export async function archiveProperty(_prev: FormState, formData: FormData): Promise<FormState> {
   const supabase = await createClient();
 
   const { data } = await supabase.auth.getClaims();
@@ -108,11 +108,12 @@ export async function deleteProperty(_prev: FormState, formData: FormData): Prom
 
   const id = String(formData.get("id") ?? "");
 
-  // .select().single() makes a delete that RLS blocked (0 rows) come back as an error
+  // .select().single() makes a blocked or already archived update an error.
   const { error } = await supabase
     .from("properties")
-    .delete()
+    .update({ deleted_at: new Date().toISOString(), deleted_by: data.claims.sub })
     .eq("id", id)
+    .is("deleted_at", null)
     .select("id")
     .single();
   if (error) return { error: error.message };
@@ -123,8 +124,9 @@ export async function deleteProperty(_prev: FormState, formData: FormData): Prom
 
 - Server Actions are **public POST endpoints**. Check auth inside every one, even if the UI hides the button.
 - RLS still applies, because the server client acts as the signed-in user. Treat the auth check as an early exit and RLS as the real guard.
-- **Chain `.select(...).single()` after `update` / `delete`.** Without it, a write that RLS blocks returns no error and touches 0 rows.
-- Call `refresh()` after a successful write so the page's server fetch runs again. If the URL holds state that should be cleared (e.g. `?edit=<id>` after saving or deleting), `redirect()` to the clean path instead, as `app/properties/actions.ts` does.
+- **Chain `.select(...).single()` after `update`.** Without it, a write that RLS blocks returns no error and touches 0 rows.
+- Archive invoices, vendors, and properties by setting `deleted_at` and `deleted_by`; filter active lists with `.is("deleted_at", null)`.
+- Call `refresh()` after a successful write so the page's server fetch runs again. If the URL holds state that should be cleared (e.g. `?edit=<id>` after saving or archiving), `redirect()` to the clean path instead, as `app/properties/actions.ts` does.
 - Return `{ error }` for errors the user can fix (show them with `useActionState`). Throw for bugs.
 
 ---
@@ -207,7 +209,7 @@ Calling `router.refresh()` keeps the server as the single source of the data, so
 |---|---|
 | Show data on a page | Server client in `page.tsx` → props |
 | Check that the user is signed in | `getClaims()` on the server |
-| Create / update / delete | Server Action + server client + `refresh()` |
+| Create / update / archive | Server Action + server client + `refresh()` |
 | Show pending / error state for a write | `useActionState` in a `.client.tsx` form |
 | React to sign-in / sign-out in the browser | Browser client `onAuthStateChange` |
 | Live updates | Browser client realtime → `router.refresh()` |

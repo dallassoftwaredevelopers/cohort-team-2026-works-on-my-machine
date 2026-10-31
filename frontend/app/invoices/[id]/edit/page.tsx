@@ -42,9 +42,10 @@ async function InvoiceEditor({ params }: Props) {
     supabase.from("invoices")
       .select("id, reference_number, vendor_id, property_id, amount, due_date, payment_url, status")
       .eq("id", id)
+      .is("deleted_at", null)
       .maybeSingle(),
-    supabase.from("vendors").select("id, name").order("name"),
-    supabase.from("properties").select("id, name").order("name"),
+    supabase.from("vendors").select("id, name, deleted_at").order("name"),
+    supabase.from("properties").select("id, name, deleted_at").order("name"),
   ]);
   if (invoiceResult.error) throw invoiceResult.error;
   if (vendorResult.error) throw vendorResult.error;
@@ -53,10 +54,17 @@ async function InvoiceEditor({ params }: Props) {
   if (!invoice) notFound();
   if (!isInvoiceStatus(invoice.status)) throw new Error("Invoice has an unsupported status.");
 
+  const vendors = vendorResult.data
+    .filter((vendor) => !vendor.deleted_at || vendor.id === invoice.vendor_id)
+    .map((vendor) => ({ id: vendor.id, name: vendor.deleted_at ? `${vendor.name} (archived)` : vendor.name }));
+  const properties = propertyResult.data
+    .filter((property) => !property.deleted_at || property.id === invoice.property_id)
+    .map((property) => ({ id: property.id, name: property.deleted_at ? `${property.name} (archived)` : property.name }));
+
   return <InvoiceFormClient
     key={invoice.id}
-    vendors={vendorResult.data}
-    properties={propertyResult.data}
+    vendors={vendors}
+    properties={properties}
     invoice={{
       id: invoice.id,
       fields: {
