@@ -2,32 +2,27 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
-import DeleteButton from "@/components/DeleteButton.client";
-import { deleteVendor } from "./actions";
-import VendorForm from "./VendorForm.client";
+import ClickableTableRow from "@/components/ClickableTableRow.client";
 
-type Props = {
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
-};
-
-export default function VendorsPage({ searchParams }: Props) {
+export default function VendorsPage() {
   return (
-    <div className="mx-auto" style={{ maxWidth: "48rem" }}>
-      <header className="mb-4">
+    <>
+      <header className="d-flex flex-wrap align-items-start justify-content-between gap-3 mb-4">
         <div>
-          <p className="mb-1 small fw-semibold text-uppercase text-body-secondary">Vendor management</p>
-          <h1>Vendors</h1>
+          <h1 className="h3 mb-1">Utility vendors</h1>
+          <p className="text-body-secondary mb-0">Manage the vendors available when entering invoices.</p>
         </div>
+        <Link href="/vendors/new" className="btn btn-primary">Add vendor</Link>
       </header>
 
       <Suspense fallback={<p className="text-body-secondary">Loading vendors…</p>}>
-        <Vendors searchParams={searchParams} />
+        <VendorTable />
       </Suspense>
-    </div>
+    </>
   );
 }
 
-async function Vendors({ searchParams }: Props) {
+async function VendorTable() {
   const supabase = await createClient();
   const { data, error: authError } = await supabase.auth.getClaims();
   if (authError && authError.name !== "AuthSessionMissingError") throw authError;
@@ -35,37 +30,40 @@ async function Vendors({ searchParams }: Props) {
 
   const { data: vendors, error } = await supabase
     .from("vendors")
-    .select("id, name, email, address")
+    .select("id, name, account_number, payment_type, autopay")
+    .is("deleted_at", null)
     .order("name");
   if (error) throw error;
 
-  const { edit } = await searchParams;
-  const editing = vendors.find((vendor) => vendor.id === edit);
-
   return (
-    <div className="d-grid gap-4">
-      <VendorForm key={editing?.id ?? "new"} vendor={editing} />
-
-      <section aria-labelledby="vendor-list-title">
-        <h2 id="vendor-list-title" className="h4 mb-3">Saved vendors</h2>
-        {vendors.length === 0 ? (
-          <p className="card card-body text-body-secondary">No vendors yet. Add one above.</p>
-        ) : (
-          <ul className="list-group">
-            {vendors.map((vendor) => <li key={vendor.id} className="list-group-item d-flex flex-wrap align-items-center justify-content-between gap-3">
-              <div>
-                <p className="fw-medium mb-0">{vendor.name}</p>
-                {vendor.email && <p className="small text-body-secondary mb-0">{vendor.email}</p>}
-                {vendor.address && <p className="small text-body-secondary mb-0">{vendor.address}</p>}
-              </div>
-              <div className="d-flex align-items-center gap-2">
-                <Link href={{ pathname: "/vendors", query: { edit: vendor.id } }} className="btn btn-outline-secondary">Edit</Link>
-                <DeleteButton action={deleteVendor} id={vendor.id} name={vendor.name} />
-              </div>
-            </li>)}
-          </ul>
-        )}
-      </section>
+    <div className="border rounded-3 bg-body overflow-hidden">
+      <div className="table-responsive">
+        <table className="table table-hover align-middle mb-0">
+          <thead>
+            <tr>
+              <th scope="col" className="small text-uppercase text-body-secondary ps-3">Vendor</th>
+              <th scope="col" className="small text-uppercase text-body-secondary">Account number</th>
+              <th scope="col" className="small text-uppercase text-body-secondary">Payment type</th>
+              <th scope="col" className="small text-uppercase text-body-secondary pe-3">Autopay</th>
+            </tr>
+          </thead>
+          <tbody>
+            {vendors.length === 0 && (
+              <tr>
+                <td colSpan={4} className="p-4 text-body-secondary">No vendors yet. Add one to use it on invoices.</td>
+              </tr>
+            )}
+            {vendors.map((vendor) => (
+              <ClickableTableRow key={vendor.id} href={`/vendors/${vendor.id}/edit`}>
+                <td className="fw-medium ps-3"><Link href={`/vendors/${vendor.id}/edit`} className="text-body text-decoration-none" aria-label={`Edit ${vendor.name}`}>{vendor.name}</Link></td>
+                <td>{vendor.account_number || "—"}</td>
+                <td>{vendor.payment_type || "—"}</td>
+                <td className="pe-3"><span style={{ width: "3rem" }} className={`badge rounded-pill ${vendor.autopay ? "bg-success-subtle text-success-emphasis" : "bg-secondary-subtle text-secondary-emphasis"}`}>{vendor.autopay ? "On" : "Off"}</span></td>
+              </ClickableTableRow>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

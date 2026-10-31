@@ -1,7 +1,6 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { CCard, CCardBody, CCardHeader } from "@coreui/react";
 import { createClient } from "@/utils/supabase/server";
 import { isInvoiceStatus } from "@/lib/invoices/status";
 import { InvoiceFormClient } from "../../InvoiceForm.client";
@@ -12,20 +11,18 @@ const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export default function EditInvoicePage({ params }: Props) {
   return (
-    <CCard className={styles.uploader}>
-      <CCardHeader className="d-flex justify-content-between align-items-start gap-3">
+    <div className={styles.page}>
+      <header className={styles.pageHeader}>
         <div>
-          <h1 className="h3 mb-1">Edit Invoice</h1>
-          <p className="mb-0 text-body-secondary">Update the invoice details.</p>
+          <p className={styles.pageEyebrow}>Utility Bill Pay</p>
+          <h1 className={styles.pageTitle}>Edit invoice</h1>
         </div>
-        <Link href="/invoices" className="btn btn-primary">View All Invoices</Link>
-      </CCardHeader>
-      <CCardBody>
-        <Suspense fallback={<p className="text-body-secondary">Loading invoice…</p>}>
-          <InvoiceEditor params={params} />
-        </Suspense>
-      </CCardBody>
-    </CCard>
+        <Link href="/invoices" className={styles.backLink}>Back to invoices</Link>
+      </header>
+      <Suspense fallback={<p className="text-body-secondary">Loading invoice…</p>}>
+        <InvoiceEditor params={params} />
+      </Suspense>
+    </div>
   );
 }
 
@@ -42,9 +39,10 @@ async function InvoiceEditor({ params }: Props) {
     supabase.from("invoices")
       .select("id, reference_number, vendor_id, property_id, amount, due_date, payment_url, status")
       .eq("id", id)
+      .is("deleted_at", null)
       .maybeSingle(),
-    supabase.from("vendors").select("id, name").order("name"),
-    supabase.from("properties").select("id, name").order("name"),
+    supabase.from("vendors").select("id, name, account_number, deleted_at").order("name"),
+    supabase.from("properties").select("id, name, deleted_at").order("name"),
   ]);
   if (invoiceResult.error) throw invoiceResult.error;
   if (vendorResult.error) throw vendorResult.error;
@@ -53,10 +51,17 @@ async function InvoiceEditor({ params }: Props) {
   if (!invoice) notFound();
   if (!isInvoiceStatus(invoice.status)) throw new Error("Invoice has an unsupported status.");
 
+  const vendors = vendorResult.data
+    .filter((vendor) => !vendor.deleted_at || vendor.id === invoice.vendor_id)
+    .map((vendor) => ({ id: vendor.id, name: vendor.deleted_at ? `${vendor.name} (archived)` : vendor.name, account_number: vendor.account_number }));
+  const properties = propertyResult.data
+    .filter((property) => !property.deleted_at || property.id === invoice.property_id)
+    .map((property) => ({ id: property.id, name: property.deleted_at ? `${property.name} (archived)` : property.name }));
+
   return <InvoiceFormClient
     key={invoice.id}
-    vendors={vendorResult.data}
-    properties={propertyResult.data}
+    vendors={vendors}
+    properties={properties}
     invoice={{
       id: invoice.id,
       fields: {

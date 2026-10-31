@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import { invoiceStatusLabels, isInvoiceStatus } from "@/lib/invoices/status";
+import ClickableTableRow from "@/components/ClickableTableRow.client";
 
 const currency = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
 const dateFormat = new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeZone: "UTC" });
@@ -17,7 +18,6 @@ type InvoiceRow = {
   reference_number: string;
   amount: number;
   due_date: string | null;
-  payment_url: string | null;
   status: string;
   vendor: { name: string } | null;
   property: { name: string } | null;
@@ -55,7 +55,8 @@ async function InvoiceTable() {
 
   const { data: invoices, error } = await supabase
     .from("invoices")
-    .select("id, date, reference_number, amount, due_date, payment_url, status, vendor:vendors(name), property:properties(name)")
+    .select("id, date, reference_number, amount, due_date, status, vendor:vendors(name), property:properties(name)")
+    .is("deleted_at", null)
     .order("date", { ascending: false })
     .overrideTypes<InvoiceRow[], { merge: false }>();
   if (error) throw error;
@@ -66,7 +67,7 @@ async function InvoiceTable() {
         <p className="card card-body text-body-secondary">No invoices yet.</p>
       ) : (
         <div className="table-responsive">
-          <table className="table align-middle">
+          <table className="table table-hover align-middle">
             <thead>
               <tr>
                 <th scope="col">Invoice #</th>
@@ -76,30 +77,23 @@ async function InvoiceTable() {
                 <th scope="col">Date</th>
                 <th scope="col">Due</th>
                 <th scope="col">Status</th>
-                <th scope="col"><span className="visually-hidden">Actions</span></th>
               </tr>
             </thead>
             <tbody>
               {invoices.map((invoice) => (
-                <tr key={invoice.id}>
-                  <td className="fw-medium">{invoice.reference_number}</td>
+                <ClickableTableRow key={invoice.id} href={`/invoices/${invoice.id}/edit`}>
+                  <td className="fw-medium"><Link href={`/invoices/${invoice.id}/edit`} className="text-body text-decoration-none" aria-label={`Edit invoice ${invoice.reference_number}`}>{invoice.reference_number}</Link></td>
                   <td>{invoice.vendor?.name ?? "—"}</td>
                   <td>{invoice.property?.name ?? "—"}</td>
                   <td className="text-end">{currency.format(Number(invoice.amount))}</td>
                   <td>{formatDate(invoice.date)}</td>
                   <td>{formatDate(invoice.due_date)}</td>
                   <td>
-                    <span className={`badge ${statusBadge[invoice.status] ?? "text-bg-light"}`}>
+                    <span style={{ width: "10rem" }} className={`badge d-inline-block text-center ${statusBadge[invoice.status] ?? "text-bg-light"}`}>
                       {isInvoiceStatus(invoice.status) ? invoiceStatusLabels[invoice.status] : invoice.status}
                     </span>
                   </td>
-                  <td>
-                    {invoice.payment_url && (
-                      <a href={invoice.payment_url} target="_blank" rel="noreferrer" className="me-3">Pay</a>
-                    )}
-                    <Link href={`/invoices/${invoice.id}/edit`} aria-label={`Edit invoice ${invoice.reference_number}`}>Edit</Link>
-                  </td>
-                </tr>
+                </ClickableTableRow>
               ))}
             </tbody>
           </table>

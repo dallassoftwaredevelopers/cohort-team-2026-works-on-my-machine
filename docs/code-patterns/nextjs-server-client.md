@@ -155,9 +155,9 @@ A mutation is triggered on the client (a click or a form submit), but **the writ
 
 | Mutation | Where the write runs | How |
 |---|---|---|
-| Create / update / delete rows | **Server Action** (`"use server"`) using the server Supabase client | `<form action={createProperty}>` or call it from a handler |
+| Create / update / archive rows | **Server Action** (`"use server"`) using the server Supabase client | `<form action={createProperty}>` or call it from a handler |
 | Pending / error / optimistic UI around a write | **Client** (`useActionState`, `useFormStatus`, `useOptimistic`) | Inside a `.client.tsx` form |
-| Confirm dialogs ("Delete X?") | **Client** (`window.confirm` or a CoreUI modal) | Show the dialog, then call the Server Action |
+| Confirm dialogs ("Archive X?") | **Client** (`window.confirm` or a CoreUI modal) | Show the dialog, then call the Server Action |
 | File selection / preview / reading a file in the browser | **Client** | `<input type="file">` + `FileReader` in a `.client.tsx` |
 | PDF extraction | **Route Handler** (`app/api/invoices/extract/route.ts`), called from the client with `fetch` | Existing invoice upload flow |
 | Auth listener, realtime subscriptions | **Client only** (browser Supabase client) | See [Supabase data fetching](./supabase-data-fetching.md) |
@@ -245,7 +245,7 @@ Even then, prefer putting filters in `searchParams` so the server can fetch. Whe
 
 ### A full CRUD example
 
-[`app/properties/`](../../frontend/app/properties/) applies this pattern to a whole page with no `useEffect`: `page.tsx` checks auth (redirecting to [`app/login/`](../../frontend/app/login/) when signed out), fetches and renders the list; every write is a Server Action in `actions.ts`; the client leaves (`PropertyForm.client.tsx` and the shared [`components/DeleteButton.client.tsx`](../../frontend/components/DeleteButton.client.tsx)) only hold `useActionState` and `window.confirm`. UI state the server needs, such as which property is being edited, lives in a search param (`?edit=<id>`) rather than `useState`. [`app/vendors/`](../../frontend/app/vendors/) follows the same shape.
+[`app/properties/`](../../frontend/app/properties/) applies this pattern to a whole page with no `useEffect`: `page.tsx` checks auth (redirecting to [`app/login/`](../../frontend/app/login/) when signed out), fetches and renders the list; every write is a Server Action in `actions.ts`; the client leaves (`PropertyForm.client.tsx` and the shared [`components/ArchiveButton.client.tsx`](../../frontend/components/ArchiveButton.client.tsx)) only hold `useActionState` and `window.confirm`. UI state the server needs, such as which property is being edited, lives in a search param (`?edit=<id>`) rather than `useState`. [`app/vendors/`](../../frontend/app/vendors/) follows the same shape.
 
 ---
 

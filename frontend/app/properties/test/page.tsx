@@ -24,6 +24,7 @@ async function Properties() {
   const { data: properties, error } = await supabase
     .from("properties")
     .select("id, name")
+    .is("deleted_at", null)
     .order("name");
   if (error) throw error;
 
