@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
-import VendorRow from "./VendorRow.client";
+import ClickableTableRow from "@/components/ClickableTableRow.client";
 
 export default function VendorsPage() {
   return (
@@ -54,12 +54,12 @@ async function VendorTable() {
               </tr>
             )}
             {vendors.map((vendor) => (
-              <VendorRow key={vendor.id} href={`/vendors/${vendor.id}/edit`}>
+              <ClickableTableRow key={vendor.id} href={`/vendors/${vendor.id}/edit`}>
                 <td className="fw-medium ps-3"><Link href={`/vendors/${vendor.id}/edit`} className="text-body text-decoration-none" aria-label={`Edit ${vendor.name}`}>{vendor.name}</Link></td>
                 <td>{vendor.account_number || "—"}</td>
                 <td>{vendor.payment_type || "—"}</td>
                 <td className="pe-3"><span style={{ width: "3rem" }} className={`badge rounded-pill ${vendor.autopay ? "bg-success-subtle text-success-emphasis" : "bg-secondary-subtle text-secondary-emphasis"}`}>{vendor.autopay ? "On" : "Off"}</span></td>
-              </VendorRow>
+              </ClickableTableRow>
             ))}
           </tbody>
         </table>

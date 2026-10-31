@@ -1,6 +1,7 @@
 "use server";
 
 import { refresh } from "next/cache";
+import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import { isInvoiceStatus, type InvoiceStatus } from "@/lib/invoices/status";
 
@@ -140,5 +141,5 @@ export async function archiveInvoice(_prev: { error: string } | undefined, formD
     .single();
   if (error) return { error: error.message };
 
-  refresh();
+  redirect("/invoices");
 }
