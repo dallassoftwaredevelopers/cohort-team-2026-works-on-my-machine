@@ -4,7 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import { isInvoiceStatus } from "@/lib/invoices/status";
 import { InvoiceFormClient } from "../../InvoiceForm.client";
-import styles from "../../upload/upload.module.scss";
+import styles from "../../invoice-form.module.scss";
 
 type Props = { params: Promise<{ id: string }> };
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
