@@ -35,7 +35,7 @@ export default function InvoicesPage() {
     <>
       <div className="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
         <h1 className="h3 mb-0">Invoices</h1>
-        <Link href="/invoices/upload" className="btn btn-primary">
+        <Link href="/invoices/new" className="btn btn-primary">
           New Invoice
         </Link>
       </div>

@@ -5,9 +5,9 @@ import Link from "next/link";
 import { CAlert, CButton, CForm, CFormInput, CFormSelect } from "@coreui/react";
 import type { InvoiceDetails } from "@/lib/invoices/invoice-parser";
 import { invoiceStatuses, invoiceStatusLabels, type InvoiceStatus } from "@/lib/invoices/status";
-import { archiveInvoice, createInvoice, updateInvoice, type InvoiceInput } from "./upload/actions";
+import { archiveInvoice, createInvoice, updateInvoice, type InvoiceInput } from "./actions";
 import ArchiveButton from "@/components/ArchiveButton.client";
-import styles from "./upload/upload.module.scss";
+import styles from "./invoice-form.module.scss";
 
 type Option = { id: string; name: string };
 type VendorOption = Option & { account_number: string | null };
@@ -96,7 +96,7 @@ export function InvoiceFormClient({ vendors, properties, invoice }: {
     try {
       const formData = new FormData();
       formData.append("file", selectedFile);
-      const response = await fetch("/invoices/upload/extract", { method: "POST", body: formData });
+      const response = await fetch("/api/invoices/extract", { method: "POST", body: formData });
       const result = await response.json().catch(() => ({})) as { details?: InvoiceDetails; error?: string };
       if (!response.ok || !result.details) {
         throw new Error(result.error ?? "Could not extract invoice details.");

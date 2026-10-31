@@ -7,7 +7,7 @@ import { routeNames } from "./nav";
 export default function AppBreadcrumb() {
   const pathname = usePathname();
 
-  // Build cumulative paths ("/invoices", "/invoices/upload") that have a known name.
+  // Build cumulative paths ("/invoices", "/invoices/new") that have a known name.
   const segments = pathname.split("/").filter(Boolean);
   const crumbs = segments
     .map((_, i) => `/${segments.slice(0, i + 1).join("/")}`)

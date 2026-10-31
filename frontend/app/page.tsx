@@ -4,11 +4,11 @@ export default function Home() {
   return (
     <>
       <p>Home Page TBD</p>
-      <Link href="/invoices/upload" className="btn btn-primary">
-        Upload Invoice
+      <Link href="/invoices/new" className="btn btn-primary">
+        New Invoice
       </Link>
-      <Link href="/create-user" className="btn btn-primary">
-        Create User
+      <Link href="/users/new" className="btn btn-primary">
+        Add User
       </Link>
       <Link href="/properties" className="btn btn-primary">
         Manage Properties

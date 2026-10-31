@@ -136,7 +136,7 @@ If a component uses any of the following, it must be in a `.client.tsx` file.
 
 **Interactive third-party UI**
 
-- CoreUI components that keep internal state or take callbacks (modals, dropdowns, toasts, `CForm` with `validated`). Static CoreUI markup such as `CCard` and `CCardHeader` works in Server Components; see `app/invoices/upload/page.tsx`.
+- CoreUI components that keep internal state or take callbacks (modals, dropdowns, toasts, `CForm` with `validated`). Static CoreUI markup such as `CCard` and `CCardHeader` works in Server Components. See `app/invoices/InvoiceForm.client.tsx` for an interactive form.
 - The app shell (sidebar, header, breadcrumb, theme toggle) is in [`components/layout/`](../../frontend/components/layout/). The stateful pieces are `*.client.tsx` files. The root `app/layout.tsx` stays a Server Component and wraps `children` in `AppShell`. The header's account menu is a server component (`components/layout/AccountMenu.tsx`) passed into `AppShell` as the `account` prop inside `<Suspense>`, so the user's email is read on the server and only the dropdown ships JavaScript. Sidebar links live in `components/layout/nav.tsx`. Add a route there, and to `routeNames` for the breadcrumb, when you add a page.
 
 **Supabase work that must happen in the browser**
@@ -159,7 +159,7 @@ A mutation is triggered on the client (a click or a form submit), but **the writ
 | Pending / error / optimistic UI around a write | **Client** (`useActionState`, `useFormStatus`, `useOptimistic`) | Inside a `.client.tsx` form |
 | Confirm dialogs ("Archive X?") | **Client** (`window.confirm` or a CoreUI modal) | Show the dialog, then call the Server Action |
 | File selection / preview / reading a file in the browser | **Client** | `<input type="file">` + `FileReader` in a `.client.tsx` |
-| PDF extraction | **Route Handler** (`app/api/invoices/extract/route.ts`), called from the client with `fetch` | Existing invoice upload flow |
+| PDF extraction | **Route Handler** (`app/api/invoices/extract/route.ts`), called from the client with `fetch` | New invoice form |
 | Auth listener, realtime subscriptions | **Client only** (browser Supabase client) | See [Supabase data fetching](./supabase-data-fetching.md) |
 | Sign in / sign out | Either side works with `@supabase/ssr`, because both write the session cookie. We use Server Actions. | `app/login/actions.ts` (`signIn` and `signOut`; `signOut` is the Sign out item in `components/layout/AppHeaderDropdown.client.tsx`). Protected pages `redirect("/login?next=<path>")` when `getClaims()` has no claims |
 
