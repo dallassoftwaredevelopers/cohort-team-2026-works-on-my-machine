@@ -5,6 +5,15 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import { isInvoiceStatus, type InvoiceStatus } from "@/lib/invoices/status";
 
+const duplicateInvoiceIndex = "invoices_vendor_property_reference_unique_idx";
+
+function invoiceSaveError(error: { code?: string; message: string }) {
+  if (error.code === "23505" && error.message.includes(duplicateInvoiceIndex)) {
+    return "An invoice with this reference number, vendor, and property already exists (including archived invoices).";
+  }
+  return `Could not save invoice: ${error.message}`;
+}
+
 export type InvoiceInput = {
   date: string;
   vendorId: string;
@@ -88,8 +97,12 @@ export async function createInvoice(input: InvoiceInput): Promise<{ error: strin
     ...validated.values,
     date: input.date,
   });
+<<<<<<< HEAD
   if (error) return { error: `Could not save invoice: ${error.message}` };
   revalidatePath("/invoices");
+=======
+  if (error) return { error: invoiceSaveError(error) };
+>>>>>>> origin/main
   refresh();
 }
 
@@ -122,9 +135,13 @@ export async function updateInvoice(id: string, input: Omit<InvoiceInput, "date"
     .is("deleted_at", null)
     .select("id")
     .single();
+<<<<<<< HEAD
   if (error) return { error: `Could not save invoice: ${error.message}` };
   revalidatePath("/invoices");
   revalidatePath(`/invoices/${id}/edit`);
+=======
+  if (error) return { error: invoiceSaveError(error) };
+>>>>>>> origin/main
   refresh();
 }
 
