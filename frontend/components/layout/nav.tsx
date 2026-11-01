@@ -22,10 +22,10 @@ const nav: NavEntry[] = [
   { component: CNavItem, name: "Home", to: "/", icon: <CIcon icon={cilHome} customClassName="nav-icon" /> },
   { component: CNavTitle, name: "Billing" },
   { component: CNavItem, name: "Invoices", to: "/invoices", icon: <CIcon icon={cilDescription} customClassName="nav-icon" /> },
-  { component: CNavItem, name: "Activity", to: "/events", icon: <CIcon icon={cilHistory} customClassName="nav-icon" /> },
   { component: CNavTitle, name: "Manage" },
   { component: CNavItem, name: "Properties", to: "/properties", icon: <CIcon icon={cilBuilding} customClassName="nav-icon" /> },
   { component: CNavItem, name: "Vendors", to: "/vendors", icon: <CIcon icon={cilBuilding} customClassName="nav-icon" /> },
+  { component: CNavItem, name: "Activity", to: "/events", icon: <CIcon icon={cilHistory} customClassName="nav-icon" /> },
   { component: CNavItem, name: "Users", to: "/users", icon: <CIcon icon={cilUser} customClassName="nav-icon" /> },
 ];
 
