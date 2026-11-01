@@ -97,12 +97,8 @@ export async function createInvoice(input: InvoiceInput): Promise<{ error: strin
     ...validated.values,
     date: input.date,
   });
-<<<<<<< HEAD
-  if (error) return { error: `Could not save invoice: ${error.message}` };
-  revalidatePath("/invoices");
-=======
   if (error) return { error: invoiceSaveError(error) };
->>>>>>> origin/main
+  revalidatePath("/invoices");
   refresh();
 }
 
@@ -135,13 +131,9 @@ export async function updateInvoice(id: string, input: Omit<InvoiceInput, "date"
     .is("deleted_at", null)
     .select("id")
     .single();
-<<<<<<< HEAD
-  if (error) return { error: `Could not save invoice: ${error.message}` };
+  if (error) return { error: invoiceSaveError(error) };
   revalidatePath("/invoices");
   revalidatePath(`/invoices/${id}/edit`);
-=======
-  if (error) return { error: invoiceSaveError(error) };
->>>>>>> origin/main
   refresh();
 }
 
