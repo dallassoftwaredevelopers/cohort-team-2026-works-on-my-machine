@@ -27,6 +27,7 @@ export default function UserForm({ user }: { user: UserProfile }) {
         <div className="d-flex gap-3">
           <button type="submit" disabled={pending} className="btn btn-primary">{pending ? "Saving…" : "Save changes"}</button>
           <Link href="/users" className="btn btn-outline-secondary">Cancel</Link>
+          <Link href={`/events?type=actor&id=${user.id}`} className="btn btn-outline-secondary" title="Actions performed by this user">History</Link>
         </div>
       </div>
     </form>

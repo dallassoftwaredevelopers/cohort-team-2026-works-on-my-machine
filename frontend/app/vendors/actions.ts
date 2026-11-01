@@ -31,6 +31,7 @@ export async function saveVendor(_prev: FormState, formData: FormData): Promise<
 
   revalidatePath("/vendors");
   if (id) revalidatePath(`/vendors/${id}/edit`);
+  revalidatePath("/events");
   refresh();
   redirect("/vendors");
 }
@@ -54,6 +55,7 @@ export async function archiveVendor(_prev: FormState, formData: FormData): Promi
 
   revalidatePath("/vendors");
   revalidatePath(`/vendors/${id}/edit`);
+  revalidatePath("/events");
   refresh();
   redirect("/vendors");
 }

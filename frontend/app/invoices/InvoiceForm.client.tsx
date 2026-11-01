@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useRef, useState, useTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { CAlert, CButton, CForm, CFormInput, CFormSelect } from "@coreui/react";
 import type { InvoiceDetails } from "@/lib/invoices/invoice-parser";
 import { invoiceStatuses, invoiceStatusLabels, type InvoiceStatus } from "@/lib/invoices/status";
@@ -55,6 +56,7 @@ export function InvoiceFormClient({ vendors, properties, invoice }: {
   properties: Option[];
   invoice?: { id: string; fields: Fields };
 }) {
+  const router = useRouter();
   const [fields, setFields] = useState<Fields>(invoice?.fields ?? initialFields);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -146,15 +148,15 @@ export function InvoiceFormClient({ vendors, properties, invoice }: {
           : await createInvoice({ ...fields, date: localDate() });
         if (result) {
           setNotification({ color: "danger", message: result.error });
+        } else if (invoice) {
+          router.push("/invoices");
         } else {
-          setNotification({ color: "success", message: invoice ? "Invoice updated." : "Invoice saved." });
-          if (!invoice) {
-            setFields(initialFields);
-            setSelectedFile(null);
-            setPreviewUrl("");
-            setPreviewType("");
-            if (fileInputRef.current) fileInputRef.current.value = "";
-          }
+          setNotification({ color: "success", message: "Invoice saved." });
+          setFields(initialFields);
+          setSelectedFile(null);
+          setPreviewUrl("");
+          setPreviewType("");
+          if (fileInputRef.current) fileInputRef.current.value = "";
           setValidated(false);
         }
       } catch (error) {
@@ -275,6 +277,7 @@ export function InvoiceFormClient({ vendors, properties, invoice }: {
       </CForm>
       <div className={styles.actions}>
         <div className={styles.actionGroup}>
+          {invoice && <Link href={`/events?type=invoice&id=${invoice.id}`} className="btn btn-outline-secondary">History</Link>}
           {invoice && <ArchiveButton action={archiveInvoice} id={invoice.id} name={invoice.fields.invoiceNumber} />}
           {payUrl ? (
             <a href={payUrl} target="_blank" rel="noopener noreferrer" className="btn btn-outline-primary">Pay</a>

@@ -99,6 +99,7 @@ export async function createInvoice(input: InvoiceInput): Promise<{ error: strin
   });
   if (error) return { error: invoiceSaveError(error) };
   revalidatePath("/invoices");
+  revalidatePath("/events");
   refresh();
 }
 
@@ -134,6 +135,7 @@ export async function updateInvoice(id: string, input: Omit<InvoiceInput, "date"
   if (error) return { error: invoiceSaveError(error) };
   revalidatePath("/invoices");
   revalidatePath(`/invoices/${id}/edit`);
+  revalidatePath("/events");
   refresh();
 }
 
@@ -155,6 +157,7 @@ export async function archiveInvoice(_prev: { error: string } | undefined, formD
 
   revalidatePath("/invoices");
   revalidatePath(`/invoices/${id}/edit`);
+  revalidatePath("/events");
   refresh();
   redirect("/invoices");
 }

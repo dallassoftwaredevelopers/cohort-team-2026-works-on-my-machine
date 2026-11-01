@@ -36,6 +36,7 @@ export default function VendorForm({ vendor }: { vendor?: Vendor }) {
         <div className="d-flex gap-3">
         <button type="submit" form={formId} disabled={pending} className="btn btn-primary">{pending ? "Saving…" : vendor ? "Save changes" : "Add vendor"}</button>
         <Link href="/vendors" className="btn btn-outline-secondary">Cancel</Link>
+        {vendor && <Link href={`/events?type=vendor&id=${vendor.id}`} className="btn btn-outline-secondary">History</Link>}
         </div>
         {vendor && <ArchiveButton action={archiveVendor} id={vendor.id} name={vendor.name} />}
       </div>

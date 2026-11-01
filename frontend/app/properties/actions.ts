@@ -26,7 +26,7 @@ export async function saveProperty(_prev: FormState, formData: FormData): Promis
   const { error } = await query.select("id").single();
   if (error) return { error: error.message, values: { name, address } };
 
-
+  revalidatePath("/events");
   revalidatePath("/properties");
   refresh();
   if (id) redirect("/properties");
@@ -50,6 +50,7 @@ export async function archiveProperty(_prev: FormState, formData: FormData): Pro
   if (error) return { error: error.message };
 
   revalidatePath("/properties");
+  revalidatePath("/events");
   refresh();
   redirect("/properties");
 }
