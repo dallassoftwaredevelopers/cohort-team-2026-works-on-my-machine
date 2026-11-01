@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { createClient as createStatelessClient } from "@supabase/supabase-js";
 import { createClient } from "@/utils/supabase/server";
 
@@ -39,5 +40,6 @@ export async function createUser(_prev: CreateUserState, formData: FormData): Pr
   });
   if (error) return { error: error.message, values };
 
+  revalidatePath("/users");
   return { created: { email, needsConfirmation: !signUp.session } };
 }

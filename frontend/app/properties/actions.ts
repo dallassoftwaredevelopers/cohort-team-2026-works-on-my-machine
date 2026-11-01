@@ -1,6 +1,6 @@
 "use server";
 
-import { refresh } from "next/cache";
+import { refresh, revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 
@@ -27,8 +27,9 @@ export async function saveProperty(_prev: FormState, formData: FormData): Promis
   if (error) return { error: error.message, values: { name, address } };
 
 
-  if (id) redirect("/properties");
+  revalidatePath("/properties");
   refresh();
+  if (id) redirect("/properties");
 }
 
 export async function archiveProperty(_prev: FormState, formData: FormData): Promise<FormState> {
@@ -48,5 +49,7 @@ export async function archiveProperty(_prev: FormState, formData: FormData): Pro
     .single();
   if (error) return { error: error.message };
 
+  revalidatePath("/properties");
+  refresh();
   redirect("/properties");
 }

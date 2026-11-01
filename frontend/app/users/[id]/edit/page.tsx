@@ -47,5 +47,5 @@ async function UserEditor({ params }: Props) {
   if (error) throw error;
   if (!user) notFound();
 
-  return <UserForm key={user.id} user={user} />;
+  return <UserForm key={JSON.stringify(user)} user={user} />;
 }
