@@ -59,7 +59,7 @@ async function InvoiceEditor({ params }: Props) {
     .map((property) => ({ id: property.id, name: property.deleted_at ? `${property.name} (archived)` : property.name }));
 
   return <InvoiceFormClient
-    key={invoice.id}
+    key={JSON.stringify(invoice)}
     vendors={vendors}
     properties={properties}
     invoice={{

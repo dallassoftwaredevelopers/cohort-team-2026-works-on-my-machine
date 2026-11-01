@@ -1,6 +1,6 @@
 "use server";
 
-import { refresh } from "next/cache";
+import { refresh, revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import { isUserRole } from "@/lib/users/roles";
@@ -33,6 +33,8 @@ export async function saveUser(_prev: UserFormState, formData: FormData): Promis
     .single();
   if (error) return { error: error.message, name, role };
 
+  revalidatePath("/users");
+  revalidatePath(`/users/${id}/edit`);
   refresh();
   redirect("/users");
 }
