@@ -27,9 +27,9 @@ export async function saveProperty(_prev: FormState, formData: FormData): Promis
   if (error) return { error: error.message, values: { name, address } };
 
   revalidatePath("/events");
-
-  if (id) redirect("/properties");
+  revalidatePath("/properties");
   refresh();
+  if (id) redirect("/properties");
 }
 
 export async function archiveProperty(_prev: FormState, formData: FormData): Promise<FormState> {
@@ -49,6 +49,8 @@ export async function archiveProperty(_prev: FormState, formData: FormData): Pro
     .single();
   if (error) return { error: error.message };
 
+  revalidatePath("/properties");
   revalidatePath("/events");
+  refresh();
   redirect("/properties");
 }

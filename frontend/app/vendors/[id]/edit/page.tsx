@@ -41,5 +41,5 @@ async function VendorEditor({ params }: Props) {
   if (error) throw error;
   if (!vendor) notFound();
 
-  return <VendorForm key={vendor.id} vendor={vendor} />;
+  return <VendorForm key={JSON.stringify(vendor)} vendor={vendor} />;
 }
