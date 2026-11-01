@@ -111,10 +111,13 @@ async function EventViewer({ searchParams }: Props) {
   const vendors = new Map(vendorResult.data.map((vendor) => [vendor.id, vendor.name]));
   const properties = new Map(propertyResult.data.map((property) => [property.id, property.name]));
   const actors = new Map(profileResult.data.map((profile) => [profile.id, profile.name]));
+  const invoiceNames = new Map(invoiceResult.data.map((invoice) => [
+    invoice.id, `${vendors.get(invoice.vendor_id) ?? "Unknown vendor"} ${invoice.reference_number}`,
+  ]));
   const options: FilterOptions = {
     invoice: invoiceResult.data.map((invoice) => ({
       id: invoice.id,
-      label: `${invoice.reference_number} · ${vendors.get(invoice.vendor_id) ?? "Unknown vendor"} · ${properties.get(invoice.property_id) ?? "Unknown property"}${invoice.deleted_at ? " (archived)" : ""}`,
+      label: `${invoiceNames.get(invoice.id) ?? invoice.reference_number} for ${properties.get(invoice.property_id) ?? "Unknown property"}${invoice.deleted_at ? " (archived)" : ""}`,
     })),
     vendor: vendorResult.data.map((vendor) => ({ id: vendor.id, label: `${vendor.name}${vendor.deleted_at ? " (archived)" : ""}` })),
     property: propertyResult.data.map((property) => ({ id: property.id, label: `${property.name}${property.deleted_at ? " (archived)" : ""}` })),
@@ -147,7 +150,7 @@ async function EventViewer({ searchParams }: Props) {
           {visibleEvents.length === 0 ? <p className="card card-body text-body-secondary">No events found for this filter.</p> : (
             <ol className="list-group mb-3">
               {visibleEvents.map((event) => {
-                const target = event.invoice_id ? options.invoice.find((option) => option.id === event.invoice_id)?.label
+                const target = event.invoice_id ? invoiceNames.get(event.invoice_id)
                   : event.vendor_id ? options.vendor.find((option) => option.id === event.vendor_id)?.label
                     : options.property.find((option) => option.id === event.property_id)?.label;
                 const actorName = event.actor_type === "system" ? "System"
