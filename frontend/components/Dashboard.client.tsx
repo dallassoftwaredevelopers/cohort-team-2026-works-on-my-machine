@@ -131,7 +131,7 @@ export default function Dashboard({
           </p>
         </div>
 
-        <CButton color="primary" href="/invoices/upload">
+        <CButton color="primary" href="/invoices/new">
           Upload a Bill
         </CButton>
       </div>

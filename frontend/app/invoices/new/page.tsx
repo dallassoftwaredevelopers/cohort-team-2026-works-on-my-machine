@@ -3,9 +3,9 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import { InvoiceFormClient } from "../InvoiceForm.client";
-import styles from "./upload.module.scss";
+import styles from "../invoice-form.module.scss";
 
-export default function Page() {
+export default function NewInvoicePage() {
   return (
     <div className={styles.page}>
       <header className={styles.pageHeader}>
@@ -18,17 +18,17 @@ export default function Page() {
         </Link>
       </header>
       <Suspense fallback={<p className="text-body-secondary">Loading vendors and properties…</p>}>
-        <Uploader />
+        <NewInvoiceForm />
       </Suspense>
     </div>
   );
 }
 
-async function Uploader() {
+async function NewInvoiceForm() {
   const supabase = await createClient();
   const { data, error: authError } = await supabase.auth.getClaims();
   if (authError && authError.name !== "AuthSessionMissingError") throw authError;
-  if (!data?.claims) redirect("/login?next=/invoices/upload");
+  if (!data?.claims) redirect("/login?next=/invoices/new");
 
   const [vendorResult, propertyResult] = await Promise.all([
     supabase.from("vendors").select("id, name, account_number").is("deleted_at", null).order("name"),

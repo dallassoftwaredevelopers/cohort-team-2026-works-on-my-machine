@@ -15,6 +15,12 @@ export async function createUser(_prev: CreateUserState, formData: FormData): Pr
   const { data } = await supabase.auth.getClaims();
   if (!data?.claims) throw new Error("Unauthorized");
 
+  const { data: actor, error: actorError } = await supabase.from("profiles")
+    .select("role")
+    .eq("id", data.claims.sub)
+    .single();
+  if (actorError || actor?.role !== "admin") return { error: "Only admins can add users.", values: { name: "", email: "" } };
+
   const name = String(formData.get("name") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
