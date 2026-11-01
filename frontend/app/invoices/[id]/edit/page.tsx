@@ -17,22 +17,13 @@ export default function EditInvoicePage({ params }: Props) {
           <p className={styles.pageEyebrow}>Utility Bill Pay</p>
           <h1 className={styles.pageTitle}>Edit invoice</h1>
         </div>
-        <div className="d-flex flex-wrap gap-2">
-          <Link href="/invoices" className={styles.backLink}>Back to invoices</Link>
-          <Suspense fallback={null}><InvoiceHistoryLink params={params} /></Suspense>
-        </div>
+        <Link href="/invoices" className={styles.backLink}>Back to invoices</Link>
       </header>
       <Suspense fallback={<p className="text-body-secondary">Loading invoice…</p>}>
         <InvoiceEditor params={params} />
       </Suspense>
     </div>
   );
-}
-
-async function InvoiceHistoryLink({ params }: Props) {
-  const { id } = await params;
-  if (!uuid.test(id)) return null;
-  return <Link href={`/events?type=invoice&id=${id}`} className={styles.backLink}>History</Link>;
 }
 
 async function InvoiceEditor({ params }: Props) {

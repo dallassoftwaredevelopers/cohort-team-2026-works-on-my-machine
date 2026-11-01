@@ -275,6 +275,7 @@ export function InvoiceFormClient({ vendors, properties, invoice }: {
       </CForm>
       <div className={styles.actions}>
         <div className={styles.actionGroup}>
+          {invoice && <Link href={`/events?type=invoice&id=${invoice.id}`} className="btn btn-outline-secondary">History</Link>}
           {invoice && <ArchiveButton action={archiveInvoice} id={invoice.id} name={invoice.fields.invoiceNumber} />}
           {payUrl ? (
             <a href={payUrl} target="_blank" rel="noopener noreferrer" className="btn btn-outline-primary">Pay</a>

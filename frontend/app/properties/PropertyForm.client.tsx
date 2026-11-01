@@ -25,7 +25,6 @@ export default function PropertyForm({ property }: { property?: Property }) {
       <div className="d-flex gap-3">
         <button type="submit" disabled={pending} className="btn btn-primary">{pending ? "Saving…" : property ? "Save changes" : "Add property"}</button>
         {property && <Link href="/properties" className="btn btn-outline-secondary">Cancel</Link>}
-        {property && <Link href={`/events?type=property&id=${property.id}`} className="btn btn-outline-secondary">History</Link>}
       </div>
     </form>
   );
