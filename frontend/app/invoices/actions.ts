@@ -1,6 +1,6 @@
 "use server";
 
-import { refresh } from "next/cache";
+import { refresh, revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import { isInvoiceStatus, type InvoiceStatus } from "@/lib/invoices/status";
@@ -89,6 +89,7 @@ export async function createInvoice(input: InvoiceInput): Promise<{ error: strin
     date: input.date,
   });
   if (error) return { error: `Could not save invoice: ${error.message}` };
+  revalidatePath("/events");
   refresh();
 }
 
@@ -122,6 +123,7 @@ export async function updateInvoice(id: string, input: Omit<InvoiceInput, "date"
     .select("id")
     .single();
   if (error) return { error: `Could not save invoice: ${error.message}` };
+  revalidatePath("/events");
   refresh();
 }
 
@@ -141,5 +143,6 @@ export async function archiveInvoice(_prev: { error: string } | undefined, formD
     .single();
   if (error) return { error: error.message };
 
+  revalidatePath("/events");
   redirect("/invoices");
 }

@@ -15,13 +15,22 @@ export default function EditVendorPage({ params }: Props) {
           <h1 className="h3 mb-1">Edit vendor</h1>
           <p className="text-body-secondary mb-0">Update the vendor details.</p>
         </div>
-        <Link href="/vendors" className="btn btn-outline-secondary">Back to vendors</Link>
+        <div className="d-flex flex-wrap gap-2">
+          <Link href="/vendors" className="btn btn-outline-secondary">Back to vendors</Link>
+          <Suspense fallback={null}><VendorHistoryLink params={params} /></Suspense>
+        </div>
       </header>
       <Suspense fallback={<p className="text-body-secondary">Loading vendor…</p>}>
         <VendorEditor params={params} />
       </Suspense>
     </div>
   );
+}
+
+async function VendorHistoryLink({ params }: Props) {
+  const { id } = await params;
+  if (!uuid.test(id)) return null;
+  return <Link href={`/events?type=vendor&id=${id}`} className="btn btn-outline-secondary">History</Link>;
 }
 
 async function VendorEditor({ params }: Props) {

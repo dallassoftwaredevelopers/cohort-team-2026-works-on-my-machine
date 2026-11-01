@@ -1,6 +1,6 @@
 "use server";
 
-import { refresh } from "next/cache";
+import { refresh, revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 
@@ -29,6 +29,7 @@ export async function saveVendor(_prev: FormState, formData: FormData): Promise<
   const { error } = await query.select("id").single();
   if (error) return { error: error.message, values: submitted };
 
+  revalidatePath("/events");
   refresh();
   redirect("/vendors");
 }
@@ -50,5 +51,6 @@ export async function archiveVendor(_prev: FormState, formData: FormData): Promi
     .single();
   if (error) return { error: error.message };
 
+  revalidatePath("/events");
   redirect("/vendors");
 }

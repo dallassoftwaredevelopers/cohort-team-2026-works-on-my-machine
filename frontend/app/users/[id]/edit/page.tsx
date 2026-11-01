@@ -15,13 +15,22 @@ export default function EditUserPage({ params }: Props) {
           <h1 className="h3 mb-1">Edit user</h1>
           <p className="text-body-secondary mb-0">Update the user profile.</p>
         </div>
-        <Link href="/users" className="btn btn-outline-secondary">Back to users</Link>
+        <div className="d-flex flex-wrap gap-2">
+          <Link href="/users" className="btn btn-outline-secondary">Back to users</Link>
+          <Suspense fallback={null}><UserActivityLink params={params} /></Suspense>
+        </div>
       </header>
       <Suspense fallback={<p className="text-body-secondary">Loading user…</p>}>
         <UserEditor params={params} />
       </Suspense>
     </div>
   );
+}
+
+async function UserActivityLink({ params }: Props) {
+  const { id } = await params;
+  if (!uuid.test(id)) return null;
+  return <Link href={`/events?type=actor&id=${id}`} className="btn btn-outline-secondary">Actions by user</Link>;
 }
 
 async function UserEditor({ params }: Props) {
