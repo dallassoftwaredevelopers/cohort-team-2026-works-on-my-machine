@@ -8,6 +8,10 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 <!-- END:nextjs-agent-rules -->
 
+## Shared repository instructions
+
+Read [../AGENTS.md](../AGENTS.md) first; it is the primary shared policy for all agents. This file adds frontend-specific conventions and retains the generated Next.js guidance above. Shared project and payment context starts at [../docs/ai/index.md](../docs/ai/index.md).
+
 ## Project docs
 
 All project docs live in the repo-root `docs/` folder (`../docs/` from here). Each folder has an `index.md` that lists what's in it, so read the index first rather than assuming a doc exists.
@@ -22,6 +26,7 @@ All project docs live in the repo-root `docs/` folder (`../docs/` from here). Ea
 - Use a kebab-case file name: `topic-name.md`.
 - Add a row for it to that folder's `index.md`. If you create a new folder, give it an `index.md` and link it from `docs/index.md`.
 - Follow the "Adding a …" section in the folder's `index.md`.
+- Exception: the explicitly requested shared files under `docs/ai/` use uppercase names as listed in their index; keep those names stable.
 
 ## Naming conventions
 
