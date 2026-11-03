@@ -45,7 +45,7 @@ async function Properties({ searchParams }: Props) {
 
   return (
     <div className="d-grid gap-4">
-      <PropertyForm key={editing?.id ?? "new"} property={editing} />
+      <PropertyForm key={editing ? JSON.stringify(editing) : "new"} property={editing} />
 
       <section aria-labelledby="property-list-title">
         <h2 id="property-list-title" className="h4 mb-3">Saved properties</h2>

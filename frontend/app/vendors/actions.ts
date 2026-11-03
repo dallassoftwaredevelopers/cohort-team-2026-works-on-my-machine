@@ -1,10 +1,11 @@
 "use server";
 
-import { refresh } from "next/cache";
+import { refresh, revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 
-export type FormState = { error: string; values?: Record<string, string> } | undefined;
+export type SavedVendor = { id: string; name: string; account_number: string | null };
+export type FormState = { error?: string; values?: Record<string, string>; saved?: SavedVendor } | undefined;
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function saveVendor(_prev: FormState, formData: FormData): Promise<FormState> {
@@ -26,14 +27,18 @@ export async function saveVendor(_prev: FormState, formData: FormData): Promise<
   const query = id
     ? supabase.from("vendors").update(values).eq("id", id).is("deleted_at", null)
     : supabase.from("vendors").insert(values);
-  const { error } = await query.select("id").single();
+  const { data: row, error } = await query.select("id, name, account_number").single();
   if (error) return { error: error.message, values: submitted };
 
+  revalidatePath("/vendors");
+  if (id) revalidatePath(`/vendors/${id}/edit`);
+  revalidatePath("/events");
   refresh();
+  if (formData.get("embedded") === "1") return { saved: row };
   redirect("/vendors");
 }
 
-export async function archiveVendor(_prev: FormState, formData: FormData): Promise<FormState> {
+export async function archiveVendor(_prev: FormState, formData: FormData): Promise<{ error: string } | undefined> {
   const supabase = await createClient();
 
   const { data } = await supabase.auth.getClaims();
@@ -50,5 +55,9 @@ export async function archiveVendor(_prev: FormState, formData: FormData): Promi
     .single();
   if (error) return { error: error.message };
 
+  revalidatePath("/vendors");
+  revalidatePath(`/vendors/${id}/edit`);
+  revalidatePath("/events");
+  refresh();
   redirect("/vendors");
 }

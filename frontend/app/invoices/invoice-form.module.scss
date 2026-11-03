@@ -45,12 +45,6 @@
   gap: clamp(1.5rem, 3vw, 3rem);
 }
 
-.layoutEdit {
-  display: block;
-  max-width: 830px;
-  margin-inline: auto;
-}
-
 .previewPanel {
   min-width: 0;
   padding: clamp(1rem, 2vw, 1.5rem);
@@ -183,6 +177,43 @@
 
 .actionGroup:last-child {
   margin-left: auto;
+}
+
+.moreActions {
+  position: relative;
+
+  summary {
+    list-style: none;
+    &::-webkit-details-marker { display: none; }
+  }
+}
+
+.moreActionsMenu {
+  position: absolute;
+  bottom: calc(100% + 0.5rem);
+  left: 0;
+  z-index: 10;
+  display: grid;
+  gap: 0.5rem;
+  width: 16rem;
+  padding: 0.75rem;
+  border: 1px solid var(--cui-border-color);
+  border-radius: 0.65rem;
+  background: var(--cui-body-bg);
+  box-shadow: 0 0.5rem 1rem #0002;
+
+  form, :global(.btn) { width: 100%; }
+}
+
+.reopenDialog {
+  width: min(32rem, calc(100vw - 2rem));
+  padding: 1.5rem;
+  border: 1px solid var(--cui-border-color);
+  border-radius: 0.85rem;
+  color: var(--cui-body-color);
+  background: var(--cui-body-bg);
+
+  &::backdrop { background: #0007; }
 }
 
 .actions :global(.btn) {

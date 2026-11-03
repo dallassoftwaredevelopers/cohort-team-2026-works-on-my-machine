@@ -5,6 +5,9 @@ import {
   cilBuilding,
   cilDescription,
   cilHome,
+  cilHistory,
+  cilIndustry,
+  cilSettings,
   cilUser,
 } from "@coreui/icons";
 
@@ -23,7 +26,9 @@ const nav: NavEntry[] = [
   { component: CNavItem, name: "Invoices", to: "/invoices", icon: <CIcon icon={cilDescription} customClassName="nav-icon" /> },
   { component: CNavTitle, name: "Manage" },
   { component: CNavItem, name: "Properties", to: "/properties", icon: <CIcon icon={cilBuilding} customClassName="nav-icon" /> },
-  { component: CNavItem, name: "Vendors", to: "/vendors", icon: <CIcon icon={cilBuilding} customClassName="nav-icon" /> },
+  { component: CNavItem, name: "Vendors", to: "/vendors", icon: <CIcon icon={cilIndustry} customClassName="nav-icon" /> },
+  { component: CNavItem, name: "Rules", to: "/rules", icon: <CIcon icon={cilSettings} customClassName="nav-icon" /> },
+  { component: CNavItem, name: "Activity", to: "/events", icon: <CIcon icon={cilHistory} customClassName="nav-icon" /> },
   { component: CNavItem, name: "Users", to: "/users", icon: <CIcon icon={cilUser} customClassName="nav-icon" /> },
 ];
 
@@ -33,6 +38,8 @@ export default nav;
 export const routeNames: Record<string, string> = {
   "/invoices": "Invoices",
   "/invoices/new": "New Invoice",
+  "/events": "Activity",
+  "/rules": "Rules",
   "/properties": "Properties",
   "/vendors": "Vendors",
   "/vendors/new": "Add Vendor",

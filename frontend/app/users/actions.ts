@@ -1,11 +1,10 @@
 "use server";
 
-import { refresh } from "next/cache";
+import { refresh, revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
-import { isUserRole } from "@/lib/users/roles";
 
-export type UserFormState = { error: string; name: string; role: string } | undefined;
+export type UserFormState = { error: string; name: string } | undefined;
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function saveUser(_prev: UserFormState, formData: FormData): Promise<UserFormState> {
@@ -15,24 +14,24 @@ export async function saveUser(_prev: UserFormState, formData: FormData): Promis
 
   const id = String(formData.get("id") ?? "");
   const name = String(formData.get("name") ?? "").trim();
-  const role = String(formData.get("role") ?? "");
-  if (!uuid.test(id)) return { error: "Invalid user.", name, role };
-  if (!name) return { error: "Enter a user name.", name, role };
-  if (!isUserRole(role)) return { error: "Choose a valid role.", name, role };
+  if (!uuid.test(id)) return { error: "Invalid user.", name };
+  if (!name) return { error: "Enter a user name.", name };
 
   const { data: actor, error: actorError } = await supabase.from("profiles")
     .select("role")
     .eq("id", data.claims.sub)
     .single();
-  if (actorError || actor?.role !== "admin") return { error: "Only admins can edit users.", name, role };
+  if (actorError || actor?.role !== "admin") return { error: "Only admins can edit users.", name };
 
   const { error } = await supabase.from("profiles")
-    .update({ name, role })
+    .update({ name })
     .eq("id", id)
     .select("id")
     .single();
-  if (error) return { error: error.message, name, role };
+  if (error) return { error: error.message, name };
 
+  revalidatePath("/users");
+  revalidatePath(`/users/${id}/edit`);
   refresh();
   redirect("/users");
 }

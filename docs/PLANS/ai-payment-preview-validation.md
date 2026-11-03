@@ -17,7 +17,7 @@ The existing `scripts/test-vendor-agent.ts`, `test-vendor-browser.ts`, `test-ope
 
 ## Results (November 3, 2026)
 
-- 27 automated tests passed. Real Chromium executed three offline layouts, including review and reordered controls; payment requests were intercepted and no live payment was initiated.
+- 33 automated tests passed. Real Chromium executed three offline layouts, including review and reordered controls; payment requests were intercepted and no live payment was initiated.
 - Wrong service-account IDs, wrong amounts/vendors, nonzero fees, invalid actions, premature/duplicate submission, worker timeouts, leases, permissions, and receipt finalization were checked.
 - TypeScript, ESLint, and the standard production build passed.
 - A read-only Playwright WebKit/iPhone 13 smoke test against the built localhost app passed: login controls visible, no horizontal overflow, unauthenticated payment route redirects to login, no page errors. All external browser requests were blocked. This does not replace testing Safari on a physical iPhone.
@@ -46,10 +46,14 @@ Open the confirmed feature Preview URL in Safari. Sign in to the test app; selec
 
 Do not reset a portal to clear an uncertain application outcome. Reconcile receipt/history first. Only fictional one-time ACH is supported. Real transactions and production rollout remain out of scope.
 
+## Branch preparation
+
+The feature branch was 36 commits behind main. The two conflicts (plans index and invoice form) were resolved while syncing main into the feature branch; the PR diff retains only the one-line invoice link integration. Main was not changed. The existing uncommitted vendor-agent script is preserved. No branch push is performed while Vercel environment safety remains unverified.
+
 ## Proposed PR
 
 Title: Add restricted AI mock-payment agent with explicit authorization
 
 Description: Approved invoices can be prepared through allowlisted fictional vendor portals using OpenRouter tool calling and a restricted Playwright worker. Submission requires a separate authenticated authorization; independent bill and receipt verification precede the paid transition. Durable jobs, leases, history and duplicate guards preserve uncertain outcomes for review.
 
-Validation: 27 automated tests, TypeScript, lint, standard build, and a read-only WebKit/iPhone-viewport smoke test passed. Full physical-iPhone and live-model Preview acceptance remain pending the verified test environment and persistent worker. No real payments, main merge or production deployment.
+Validation: 33 automated tests, TypeScript, lint, standard build, and a read-only WebKit/iPhone-viewport smoke test passed. Full physical-iPhone and live-model Preview acceptance remain pending the verified test environment and persistent worker. No real payments, main merge or production deployment.

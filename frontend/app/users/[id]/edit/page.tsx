@@ -41,11 +41,11 @@ async function UserEditor({ params }: Props) {
   if (actor.role !== "admin") redirect("/users");
 
   const { data: user, error } = await supabase.from("profiles")
-    .select("id, name, role")
+    .select("id, name")
     .eq("id", id)
     .maybeSingle();
   if (error) throw error;
   if (!user) notFound();
 
-  return <UserForm key={user.id} user={user} />;
+  return <UserForm key={JSON.stringify(user)} user={user} />;
 }

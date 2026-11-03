@@ -247,6 +247,8 @@ Even then, prefer putting filters in `searchParams` so the server can fetch. Whe
 
 [`app/properties/`](../../frontend/app/properties/) applies this pattern to a whole page with no `useEffect`: `page.tsx` checks auth (redirecting to [`app/login/`](../../frontend/app/login/) when signed out), fetches and renders the list; every write is a Server Action in `actions.ts`; the client leaves (`PropertyForm.client.tsx` and the shared [`components/ArchiveButton.client.tsx`](../../frontend/components/ArchiveButton.client.tsx)) only hold `useActionState` and `window.confirm`. UI state the server needs, such as which property is being edited, lives in a search param (`?edit=<id>`) rather than `useState`. [`app/vendors/`](../../frontend/app/vendors/) follows the same shape.
 
+**Forms inside a dialog.** [`components/AppDialog.client.tsx`](../../frontend/components/AppDialog.client.tsx) is a generic CoreUI modal shell that takes any content. `VendorForm` and `PropertyForm` can be embedded in it by passing `onSaved` (which turns on embedded mode: no card wrapper or heading, a hidden `embedded=1` field, a Cancel button that calls `onCancel`). In embedded mode the Server Action returns `{ saved: row }` instead of redirecting. The form calls `onSaved` from a wrapper around the action passed to `useActionState`, not from `useEffect`. The parent gives the form a changing `key` so it remounts each time the dialog opens, and renders the dialog outside any `<form>` because portaled events bubble through the React tree. See `app/invoices/InvoiceForm.client.tsx`.
+
 ---
 
 ## Checklist for a new page

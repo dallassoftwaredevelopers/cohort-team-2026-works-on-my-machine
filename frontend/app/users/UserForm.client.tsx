@@ -3,9 +3,8 @@
 import { useActionState } from "react";
 import Link from "next/link";
 import { saveUser } from "./actions";
-import { userRoleLabels, userRoles } from "@/lib/users/roles";
 
-export type UserProfile = { id: string; name: string; role: string | null };
+export type UserProfile = { id: string; name: string };
 
 export default function UserForm({ user }: { user: UserProfile }) {
   const [state, formAction, pending] = useActionState(saveUser, undefined);
@@ -18,15 +17,11 @@ export default function UserForm({ user }: { user: UserProfile }) {
       <label className="form-label">Name
         <input type="text" name="name" required defaultValue={state?.name ?? user.name} className="form-control mt-1" />
       </label>
-      <label className="form-label">Role
-        <select name="role" required defaultValue={state?.role ?? user.role ?? "clerk"} className="form-select mt-1">
-          {userRoles.map((role) => <option key={role} value={role}>{userRoleLabels[role]}</option>)}
-        </select>
-      </label>
       <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
         <div className="d-flex gap-3">
           <button type="submit" disabled={pending} className="btn btn-primary">{pending ? "Saving…" : "Save changes"}</button>
           <Link href="/users" className="btn btn-outline-secondary">Cancel</Link>
+          <Link href={`/events?type=actor&id=${user.id}`} className="btn btn-outline-secondary" title="Actions performed by this user">History</Link>
         </div>
       </div>
     </form>

@@ -1,5 +1,6 @@
 @forward "@coreui/coreui/scss/variables" with (
   $primary: #2563eb !default,
+  $success: #15803d !default,
   $font-family-sans-serif: (var(--font-geist-sans), system-ui, -apple-system, "Segoe UI", sans-serif) !default,
   $container-max-widths: (sm: 1320px) !default,
   $container-padding-x: 1.5rem !default,

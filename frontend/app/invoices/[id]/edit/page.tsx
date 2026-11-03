@@ -5,6 +5,7 @@ import { createClient } from "@/utils/supabase/server";
 import { isInvoiceStatus } from "@/lib/invoices/status";
 import { InvoiceFormClient } from "../../InvoiceForm.client";
 import styles from "../../invoice-form.module.scss";
+import { invoiceDocumentBucket } from "@/lib/invoices/document";
 
 type Props = { params: Promise<{ id: string }> };
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -35,21 +36,39 @@ async function InvoiceEditor({ params }: Props) {
   if (authError && authError.name !== "AuthSessionMissingError") throw authError;
   if (!data?.claims) redirect(`/login?next=/invoices/${id}/edit`);
 
-  const [invoiceResult, vendorResult, propertyResult] = await Promise.all([
+  const [invoiceResult, vendorResult, propertyResult, evaluationResult] = await Promise.all([
     supabase.from("invoices")
-      .select("id, reference_number, vendor_id, property_id, amount, due_date, payment_url, status")
+      .select("id, reference_number, vendor_id, property_id, amount, due_date, payment_url, status, document_path, document_name, document_mime_type, payment_confirmation_number")
       .eq("id", id)
       .is("deleted_at", null)
       .maybeSingle(),
     supabase.from("vendors").select("id, name, account_number, deleted_at").order("name"),
     supabase.from("properties").select("id, name, deleted_at").order("name"),
+    supabase.from("invoice_rule_evaluations")
+      .select("outcome, reasons, evaluated_amount, comparable_count, comparable_average, max_auto_approval_amount, max_above_average_percent, min_comparable_bills")
+      .eq("invoice_id", id)
+      .order("evaluated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
   ]);
   if (invoiceResult.error) throw invoiceResult.error;
   if (vendorResult.error) throw vendorResult.error;
   if (propertyResult.error) throw propertyResult.error;
+  if (evaluationResult.error) throw evaluationResult.error;
   const invoice = invoiceResult.data;
   if (!invoice) notFound();
   if (!isInvoiceStatus(invoice.status)) throw new Error("Invoice has an unsupported status.");
+
+  let document: { url?: string; mime?: string; name?: string; error?: string } | undefined;
+  if (invoice.document_path) {
+    const signed = await supabase.storage.from(invoiceDocumentBucket).createSignedUrl(invoice.document_path, 3600);
+    document = {
+      url: signed.data?.signedUrl,
+      mime: invoice.document_mime_type ?? undefined,
+      name: invoice.document_name ?? undefined,
+      error: signed.error ? "Could not load this document. Refresh to try again." : undefined,
+    };
+  }
 
   const vendors = vendorResult.data
     .filter((vendor) => !vendor.deleted_at || vendor.id === invoice.vendor_id)
@@ -59,9 +78,12 @@ async function InvoiceEditor({ params }: Props) {
     .map((property) => ({ id: property.id, name: property.deleted_at ? `${property.name} (archived)` : property.name }));
 
   return <InvoiceFormClient
-    key={invoice.id}
+    key={JSON.stringify({ ...invoice, payment_confirmation_number: undefined })}
     vendors={vendors}
     properties={properties}
+    evaluation={evaluationResult.data}
+    document={document}
+    paymentConfirmation={invoice.payment_confirmation_number}
     invoice={{
       id: invoice.id,
       fields: {

@@ -1,10 +1,11 @@
 "use server";
 
-import { refresh } from "next/cache";
+import { refresh, revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 
-export type FormState = { error: string; values?: Record<string, string> } | undefined;
+export type SavedProperty = { id: string; name: string };
+export type FormState = { error?: string; values?: Record<string, string>; saved?: SavedProperty } | undefined;
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function saveProperty(_prev: FormState, formData: FormData): Promise<FormState> {
@@ -23,15 +24,17 @@ export async function saveProperty(_prev: FormState, formData: FormData): Promis
   const query = id
     ? supabase.from("properties").update(values).eq("id", id).is("deleted_at", null)
     : supabase.from("properties").insert(values);
-  const { error } = await query.select("id").single();
+  const { data: row, error } = await query.select("id, name").single();
   if (error) return { error: error.message, values: { name, address } };
 
-
-  if (id) redirect("/properties");
+  revalidatePath("/events");
+  revalidatePath("/properties");
   refresh();
+  if (formData.get("embedded") === "1") return { saved: row };
+  if (id) redirect("/properties");
 }
 
-export async function archiveProperty(_prev: FormState, formData: FormData): Promise<FormState> {
+export async function archiveProperty(_prev: FormState, formData: FormData): Promise<{ error: string } | undefined> {
   const supabase = await createClient();
 
   const { data } = await supabase.auth.getClaims();
@@ -48,5 +51,8 @@ export async function archiveProperty(_prev: FormState, formData: FormData): Pro
     .single();
   if (error) return { error: error.message };
 
+  revalidatePath("/properties");
+  revalidatePath("/events");
+  refresh();
   redirect("/properties");
 }

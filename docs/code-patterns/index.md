@@ -6,7 +6,7 @@ Reference docs for how we write code in `frontend/`. **Read the relevant doc bef
 |---|---|
 | [nextjs-server-client.md](./nextjs-server-client.md) | Creating a page or component, deciding server vs. client, naming `.client.tsx` files, writing mutations / Server Actions, choosing how to fetch |
 | [supabase-data-fetching.md](./supabase-data-fetching.md) | Reading or writing Supabase data, checking auth, choosing between the server and browser clients, using realtime |
-| [list-new-edit-routes.md](./list-new-edit-routes.md) | File map and request flow for the Vendors, Invoices, and Users list, add, and edit pages |
+| [list-new-edit-routes.md](./list-new-edit-routes.md) | File map and request flow for the Vendors, Invoices, and Users pages, plus the read-only Activity viewer |
 
 ## Ground rules (summary)
 

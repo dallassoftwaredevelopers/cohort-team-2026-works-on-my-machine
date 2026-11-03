@@ -57,6 +57,7 @@ async function InvoiceTable() {
     .from("invoices")
     .select("id, date, reference_number, amount, due_date, status, vendor:vendors(name), property:properties(name)")
     .is("deleted_at", null)
+    .neq("status", "paid")
     .order("date", { ascending: false })
     .overrideTypes<InvoiceRow[], { merge: false }>();
   if (error) throw error;
@@ -64,7 +65,7 @@ async function InvoiceTable() {
   return (
     <>
       {invoices.length === 0 ? (
-        <p className="card card-body text-body-secondary">No invoices yet.</p>
+        <p className="card card-body text-body-secondary">No active invoices.</p>
       ) : (
         <div className="table-responsive">
           <table className="table table-hover align-middle">

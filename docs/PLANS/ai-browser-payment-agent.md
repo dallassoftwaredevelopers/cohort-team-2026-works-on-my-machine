@@ -4,7 +4,7 @@ Status: Implemented for local review. Automated verification passes; live OpenRo
 
 ## Current state and integration
 
-This feature branch already stores invoice statuses and vendor customer accounts and opens payment URLs. It predates the newer confirmation migrations on main; the agent migration therefore creates its private schema and invoice confirmation column if absent. Existing read-only vendor experiment files are preserved. The new invoice payment page adds a separate prepare/authorize/verify workflow without changing extraction or approval rules.
+The feature branch is synchronized with current main and reuses invoice approval, vendor accounts, manual confirmation, paid-record protection and history. The agent migration keeps schema/confirmation-column creation conditional for compatibility with the original branch. Existing read-only vendor experiment files are preserved. The new invoice payment page adds a separate prepare/authorize/verify workflow without changing extraction or approval rules.
 
 The existing ten mock vendor portals expose a common `/api/login`, read-only `/api/account`, and `/api/payments` contract. Their UI discovers the selected service account. Reset controls are scoped to that account, remove its bills/history, and restore one unpaid bill with a new due date. Resetting is developer test setup, never a model capability.
 
@@ -102,7 +102,7 @@ Tests use the existing Node/tsx runner. Chromium tests intercept all portal traf
 
 Validation on this branch:
 
-- Automated suite: 27 tests passed in this feature-branch checkout, including its existing invoice extraction tests.
+- Automated suite: 33 tests passed in this feature-branch checkout, including its existing invoice extraction tests.
 - ESLint and TypeScript passed.
 - `next build --webpack` passed in this checkout after transfer. The standard `npm run build` (Turbopack) also passed during the preview-readiness review.
 - Live Alder Creek preparation passed with a scripted planner using the real executor and independent verifier. It stopped ready; no payment was submitted.

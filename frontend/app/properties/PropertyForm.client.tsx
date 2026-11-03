@@ -2,18 +2,29 @@
 
 import { useActionState } from "react";
 import Link from "next/link";
-import { saveProperty } from "./actions";
+import { saveProperty, type SavedProperty } from "./actions";
 
 export type Property = { id: string; name: string; address: string | null };
 
 
-export default function PropertyForm({ property }: { property?: Property }) {
-  const [state, formAction, pending] = useActionState(saveProperty, undefined);
-  const values = state?.values ?? { name: property?.name ?? "", address: property?.address ?? "" };
+export default function PropertyForm({ property, defaultName, onSaved, onCancel }: {
+  property?: Property;
+  defaultName?: string;
+  onSaved?: (property: SavedProperty) => void;
+  onCancel?: () => void;
+}) {
+  const embedded = !!onSaved;
+  const [state, formAction, pending] = useActionState(async (prev: Parameters<typeof saveProperty>[0], formData: FormData) => {
+    const result = await saveProperty(prev, formData);
+    if (result?.saved) onSaved?.(result.saved);
+    return result;
+  }, undefined);
+  const values = state?.values ?? { name: property?.name ?? defaultName ?? "", address: property?.address ?? "" };
 
   return (
-    <form action={formAction} className="card card-body d-grid gap-3">
-      <h2 className="h4">{property ? "Edit property" : "Add a property"}</h2>
+    <form action={formAction} className={embedded ? "d-grid gap-3" : "card card-body d-grid gap-3"}>
+      {!embedded && <h2 className="h4">{property ? "Edit property" : "Add a property"}</h2>}
+      {embedded && <input type="hidden" name="embedded" value="1" />}
       {state?.error && <p role="alert" className="alert alert-danger mb-0">{state.error}</p>}
       {property && <input type="hidden" name="id" value={property.id} />}
       <label className="form-label">Name
@@ -24,7 +35,9 @@ export default function PropertyForm({ property }: { property?: Property }) {
       </label>
       <div className="d-flex gap-3">
         <button type="submit" disabled={pending} className="btn btn-primary">{pending ? "Saving…" : property ? "Save changes" : "Add property"}</button>
-        {property && <Link href="/properties" className="btn btn-outline-secondary">Cancel</Link>}
+        {onCancel
+          ? <button type="button" onClick={onCancel} className="btn btn-outline-secondary">Cancel</button>
+          : property && <Link href="/properties" className="btn btn-outline-secondary">Cancel</Link>}
       </div>
     </form>
   );
