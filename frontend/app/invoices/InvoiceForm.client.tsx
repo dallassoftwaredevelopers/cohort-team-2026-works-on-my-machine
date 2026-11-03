@@ -276,6 +276,7 @@ export function InvoiceFormClient({ vendors, properties, invoice }: {
       <div className={styles.actions}>
         <div className={styles.actionGroup}>
           {invoice && <ArchiveButton action={archiveInvoice} id={invoice.id} name={invoice.fields.invoiceNumber} />}
+          {invoice && <Link href={`/invoices/${invoice.id}/payment`} className="btn btn-outline-primary">AI mock payment and history</Link>}
           {payUrl ? (
             <a href={payUrl} target="_blank" rel="noopener noreferrer" className="btn btn-outline-primary">Pay</a>
           ) : (

@@ -1,0 +1,2 @@
+import type { PaymentInvoice } from "../types";
+export const testInvoice: PaymentInvoice = { id: "10000000-0000-4000-8000-000000000001", vendorId: "20000000-0000-4000-8000-000000000001", propertyId: "30000000-0000-4000-8000-000000000001", vendorName: "Alder Creek Landscaping", propertyName: "Industrial Commons", accountNumber: "2000456700", reference: "BILL-1001", amount: "186.42", paymentUrl: "https://alder-creek-utility-demo.vercel.app/#pay/BILL-1001", status: "approved" };

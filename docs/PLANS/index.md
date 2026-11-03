@@ -4,7 +4,9 @@ Implementation plans for upcoming work. Each plan lists its status, the files it
 
 | Plan | Status | Summary |
 |---|---|---|
-| _None yet_ | | |
+| [ai-browser-payment-agent.md](./ai-browser-payment-agent.md) | Implemented for local review | Restricted mock-payment worker, explicit authorization, verification, and setup |
+
+| [ai-payment-preview-validation.md](./ai-payment-preview-validation.md) | Local validation passed | Test results, Vercel safety requirements, proposed PR and physical-iPhone acceptance |
 
 ## Adding a plan
 
