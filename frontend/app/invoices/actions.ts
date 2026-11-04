@@ -3,14 +3,16 @@
 import { refresh, revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
-import type { InvoiceStatus } from "@/lib/invoices/status";
+import { isInvoiceLocked, type InvoiceStatus } from "@/lib/invoices/status";
 import { invoiceDocumentBucket } from "@/lib/invoices/document";
+import { browserUseConfigured } from "@/lib/invoices/browser-use";
+import { startDemoPayment } from "./payment-actions";
 
 const duplicateInvoiceIndex = "invoices_vendor_property_reference_unique_idx";
 
 function invoiceSaveError(error: { code?: string; message: string }) {
   if (error.code === "23505" && error.message.includes(duplicateInvoiceIndex)) {
-    return "An invoice with this reference number, vendor, and property already exists (including archived invoices).";
+    return "A nonarchived invoice with this reference number, vendor, and property already exists (including paid invoices).";
   }
   return `Could not save invoice: ${error.message}`;
 }
@@ -78,6 +80,20 @@ async function activeReferences(supabase: Awaited<ReturnType<typeof createClient
 
 export type CreatedInvoice = { id: string; status: "approved" | "waiting on approval"; reasons: string[] };
 
+async function startAutopay(supabase: Awaited<ReturnType<typeof createClient>>, id: string) {
+  if (!browserUseConfigured()) return;
+  const invoice = await supabase.from("invoices").select("vendor_id").eq("id", id).single();
+  if (invoice.error) { console.error("Could not check invoice autopay", invoice.error.message); return; }
+  const vendor = await supabase.from("vendors").select("autopay").eq("id", invoice.data.vendor_id).is("deleted_at", null).maybeSingle();
+  if (vendor.error) { console.error("Could not check vendor autopay", vendor.error.message); return; }
+  if (vendor.data?.autopay) {
+    const payment = await startDemoPayment(id);
+    // Invoice creation/approval already succeeded. Payment failure must not invite
+    // resubmission of the invoice; the edit screen exposes its saved attempt.
+    if (payment.error) console.error("Could not start invoice demo payment", payment.error);
+  }
+}
+
 export async function createInvoice(input: Omit<InvoiceInput, "status">, document?: { path: string; name: string }): Promise<{ error: string } | CreatedInvoice> {
   const supabase = await createClient();
   const { data } = await supabase.auth.getClaims();
@@ -115,6 +131,7 @@ export async function createInvoice(input: Omit<InvoiceInput, "status">, documen
   if (!result?.id || !result.status || !Array.isArray(result.reasons)) {
     return { error: "Invoice was saved, but its approval result could not be read. Check the invoice list before trying again." };
   }
+  if (result.status === "approved") await startAutopay(supabase, result.id);
   revalidatePath("/invoices");
   revalidatePath("/invoices/new");
   revalidatePath("/");
@@ -139,7 +156,7 @@ export async function updateInvoice(id: string, input: Omit<InvoiceInput, "date"
     .maybeSingle();
   if (currentError) return { error: currentError.message };
   if (!current) return { error: "Invoice not found or archived." };
-  if (current.status === "approved" || current.status === "paid") return { error: "Approved and paid invoices cannot be edited." };
+  if (isInvoiceLocked(current.status)) return { error: "Approved, processing and paid invoices cannot be edited." };
 
   const [vendor, property] = await activeReferences(supabase, validated.values.vendor_id, validated.values.property_id);
   if (vendor.error) return { error: vendor.error.message };
@@ -169,6 +186,7 @@ export async function approveInvoice(id: string): Promise<{ error: string } | un
 
   const { error } = await supabase.rpc("approve_invoice_manually", { p_invoice_id: id });
   if (error) return { error: error.message };
+  await startAutopay(supabase, id);
   revalidatePath("/invoices");
   revalidatePath(`/invoices/${id}/edit`);
   revalidatePath("/");
@@ -224,6 +242,7 @@ export async function archiveInvoice(_prev: { error: string } | undefined, formD
     .update({ deleted_at: new Date().toISOString(), deleted_by: data.claims.sub })
     .eq("id", id)
     .neq("status", "paid")
+    .neq("status", "payment processing")
     .is("deleted_at", null)
     .select("id")
     .single();

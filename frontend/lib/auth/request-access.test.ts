@@ -2,6 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { NextRequest, NextResponse } from "next/server";
 import { enforceAuthentication } from "../../utils/supabase/middleware";
+import { unstable_doesMiddlewareMatch } from "next/experimental/testing/server";
+import { config } from "../../proxy";
 
 test("anonymous pages redirect to login with their full local destination", () => {
   for (const path of ["/", "/users", "/invoices/new", "/vendors/new", "/properties", "/rules", "/events?type=invoice&id=example&page=2", "/not-a-real-page"]) {
@@ -47,5 +49,14 @@ test("authenticated requests pass through unchanged", () => {
   for (const path of ["/", "/rules", "/api/invoices/extract"]) {
     const original = NextResponse.next();
     assert.equal(enforceAuthentication(new NextRequest(`https://app.example${path}`), true, original), original);
+  }
+});
+
+test("only SDK-managed workflow paths bypass the application login proxy", () => {
+  for (const path of ["/.well-known/workflow/v1/flow", "/.well-known/workflow/v1/webhook/test-token"]) {
+    assert.equal(unstable_doesMiddlewareMatch({ config, url: `https://app.example${path}` }), false);
+  }
+  for (const path of ["/", "/invoices", "/api/invoices/document", "/.well-known/workflow-evil", "/.well-known/private"]) {
+    assert.equal(unstable_doesMiddlewareMatch({ config, url: `https://app.example${path}` }), true);
   }
 });

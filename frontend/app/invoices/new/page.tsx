@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import { InvoiceFormClient } from "../InvoiceForm.client";
+import NewInvoiceSession from "./NewInvoiceSession.client";
 import styles from "../invoice-form.module.scss";
 
 export default function NewInvoicePage() {
@@ -37,5 +38,5 @@ async function NewInvoiceForm() {
   if (vendorResult.error) throw vendorResult.error;
   if (propertyResult.error) throw propertyResult.error;
 
-  return <InvoiceFormClient vendors={vendorResult.data} properties={propertyResult.data} />;
+  return <NewInvoiceSession><InvoiceFormClient vendors={vendorResult.data} properties={propertyResult.data} /></NewInvoiceSession>;
 }

@@ -1,5 +1,6 @@
 
 import { Suspense } from "react";
+import RefreshWhileProcessing from "@/components/RefreshWhileProcessing.client";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import Dashboard from "@/components/Dashboard.client";
@@ -153,17 +154,20 @@ async function DashboardContent() {
 
   // Pass database values to the CoreUI dashboard
   return (
-    <Dashboard
-      firstName={firstName}
-      greeting={getGreeting(now)}
-      stats={{
-        needsReview,
-        dueInSevenDays: dueInSevenDays.length,
-        dueTotal,
-        awaitingApproval,
-        approved,
-      }}
-      dueSoon={dueSoon}
-    />
+    <>
+      <RefreshWhileProcessing active={invoiceList.some((invoice) => invoice.status === "payment processing")} />
+      <Dashboard
+        firstName={firstName}
+        greeting={getGreeting(now)}
+        stats={{
+          needsReview,
+          dueInSevenDays: dueInSevenDays.length,
+          dueTotal,
+          awaitingApproval,
+          approved,
+        }}
+        dueSoon={dueSoon}
+      />
+    </>
   );
 }

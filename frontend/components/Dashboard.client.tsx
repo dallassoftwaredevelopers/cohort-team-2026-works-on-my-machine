@@ -72,6 +72,7 @@ function getStatusColor(status: string) {
     case "waiting on approval":
       return "warning" as const;
     case "approved":
+    case "payment processing":
       return "primary" as const;
     case "paid":
       return "success" as const;

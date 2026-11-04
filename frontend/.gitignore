@@ -15,6 +15,8 @@
 
 # next.js
 /.next/
+/.workflow-data/
+/app/.well-known/workflow/
 /out/
 
 # production
@@ -33,6 +35,7 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 !.env.example
+/.env.local
 
 # vercel
 .vercel
@@ -40,3 +43,4 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+/.swc

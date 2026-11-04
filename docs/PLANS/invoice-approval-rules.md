@@ -42,7 +42,7 @@ For automatic intake, assume the extractor's returned values are factually corre
 - Put invoice creation and rule evaluation in one transactional database operation shared by upload intake and the manual-entry Server Action. The function should check the authenticated actor, enforce the duplicate rule, read settings/history, insert the invoice with its decision, and record the evaluation. A single transaction prevents a saved invoice from receiving an unrecorded decision. Keep money comparisons in database `numeric` arithmetic.
 - Add an immutable evaluation record indexed by invoice ID with outcome, reason codes, settings snapshot, comparable count, and average. This explains new decisions; it is not a requirement for a past invoice to count as comparable history. The invoice edit page can show the latest decision. The existing audit trigger records a new invoice's initial status in its `created` event and records later status updates separately.
 - Replace the free status selector with a read-only status and specific actions. Tighten database grants/policies so a direct Supabase request cannot set `approved` or `paid` by bypassing the UI. Server Actions also check authentication. The demo uses one shared role, with a separate identity for each signed-in person. Revalidate invoice list, edit page, dashboard, and Activity after status changes.
-- Add a separate, durable payment-attempt record and worker when payment integration is ready. Keep one active payment intent per invoice, record retries as separate attempts, and use an idempotency key, restricted provider credentials, and a verified external result before changing status to `paid`. Never treat an AI response alone as proof of payment. The exact AI API, payment provider, and deployment mechanism remain to be chosen.
+- The [Browser Use payment integration](./browser-use-payments.md) adds durable attempts and a hosted agent. New approvals for autopay vendors start a task when configured; approved invoices also offer an explicit start. Database reservation prevents duplicate starts and sets `payment processing`. Vercel Workflow checks completion independently of the browser. The server validates structured receipt details before using the existing confirmation operation. Ambiguous outcomes stay locked for review; no external POST idempotency guarantee is assumed.
 
 ### Administration roles
 
@@ -50,7 +50,7 @@ The user list and forms now expose Clerk, Approver, and Admin. New signups defau
 
 Invoice workflow actions still require authentication and valid transitions. Distinct clerk/approver permissions for invoice actions are a separate follow-up to this administrative access increment.
 
-Status changes continue through the database functions. The approval action accepts only active invoices in `waiting on approval`; arbitrary status writes remain blocked. The manual workflow now records a confirmation number and sets `paid` in one operation. Paid invoices leave active lists and become read-only. A future payment worker can use the same confirmation operation after verifying the external result.
+Status changes continue through the database functions. The approval action accepts only active invoices in `waiting on approval`; arbitrary status writes remain blocked. The manual workflow records a confirmation number and sets `paid` in one operation. Paid invoices leave active lists and become read-only. Browser Use settlement uses that same confirmation operation after matching the returned receipt details. An unresolved payment blocks manual confirmation, archive and reopening until settlement or explicit review.
 
 More actions contains History, Archive, and (for approved invoices) Reopen for correction. Reopening requires a reason, atomically records it with the status change, and returns the invoice to waiting on approval. Users save corrections and explicitly approve again; automatic rules do not rerun on edits. Paid invoices cannot be reopened. The form has no unrestricted status dropdown.
 
@@ -82,7 +82,7 @@ More actions contains History, Archive, and (for approved invoices) Reopen for c
 | What counts as a comparable bill? | Same vendor/property, nonarchived, approved or paid, and earlier invoice date, including existing records and fake past invoices. Confirm same-day and manually approved bills. |
 | What happens if history is short, settings are missing, or autopay is off? | Set `waiting on approval` with the reason; never auto approve from incomplete evidence. |
 | Who may change status? | Any signed-in user may manually approve a waiting invoice. Saving a confirmation on an approved invoice sets `paid`; paid invoices are retained read-only. A future payment worker will supply its verified confirmation through the same operation. |
-| When should AI-assisted payment start? | After approval and only for autopay vendors. Confirm provider, authorization, and whether manual approval may also start it. |
+| When should AI-assisted payment start? | After new-invoice or manual approval for autopay vendors when Browser Use is configured. Other approved invoices can be started explicitly. Existing invoices are not swept. See the [payment integration](./browser-use-payments.md). |
 
 ## Out of scope for the first rules increment
 

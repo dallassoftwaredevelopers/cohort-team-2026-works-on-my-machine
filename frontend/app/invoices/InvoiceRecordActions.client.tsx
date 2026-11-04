@@ -12,10 +12,10 @@ export default function InvoiceRecordActions({ id, name, status, canViewHistory 
   const titleId = useId();
   const reasonId = useId();
   const [state, action, pending] = useActionState(reopenInvoice, undefined);
-  if (status === "paid" && !canViewHistory) return null;
+  if ((status === "paid" || status === "payment processing") && !canViewHistory) return null;
 
   return <>
-    {status !== "paid" && <ArchiveButton action={archiveInvoice} id={id} name={name} size="sm" />}
+    {status !== "paid" && status !== "payment processing" && <ArchiveButton action={archiveInvoice} id={id} name={name} size="sm" />}
     {canViewHistory && <Link href={`/events?type=invoice&id=${id}`} className="btn btn-sm btn-outline-secondary">History</Link>}
     {status === "approved" && <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => dialog.current?.showModal()}>Reopen for correction</button>}
 
