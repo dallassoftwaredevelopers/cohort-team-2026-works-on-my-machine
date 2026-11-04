@@ -1,0 +1,72 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import { readFile } from "node:fs/promises";
+import { PGlite } from "@electric-sql/pglite";
+import { testInvoice } from "./__fixtures__/invoice";
+
+test("Postgres enforces authorization, leases, duplicate protection, verified finalization, and recovery", { timeout: 60000 }, async () => {
+  const db = new PGlite();
+  const actor = "40000000-0000-4000-8000-000000000001";
+  try {
+    await db.exec(`
+      create role anon; create role authenticated; create role service_role bypassrls;
+      create schema auth; create schema app_private;
+      create table auth.users(id uuid primary key);
+      create function auth.uid() returns uuid language sql as $$select nullif(current_setting('test.uid',true),'')::uuid$$;
+      grant usage on schema public,auth to authenticated,service_role;
+      grant execute on function auth.uid() to authenticated,service_role;
+      create table public.vendors(id uuid primary key,name text,account_number text,deleted_at timestamptz);
+      create table public.properties(id uuid primary key,name text,deleted_at timestamptz);
+      create table public.invoices(id uuid primary key,vendor_id uuid,property_id uuid,reference_number text,amount numeric(12,2),payment_url text,status text,deleted_at timestamptz);
+      grant select on public.invoices to service_role;
+    `);
+    await db.exec(await readFile("supabase/migrations/20261103000000_mock_payment_agent.sql", "utf8"));
+    await db.query("insert into auth.users values($1)", [actor]);
+    await db.query("insert into vendors(id,name,account_number) values($1,$2,$3)", [testInvoice.vendorId, testInvoice.vendorName, testInvoice.accountNumber]);
+    await db.query("insert into properties(id,name) values($1,$2)", [testInvoice.propertyId, testInvoice.propertyName]);
+    await db.query("insert into invoices(id,vendor_id,property_id,reference_number,amount,payment_url,status) values($1,$2,$3,$4,$5,$6,'approved')", [testInvoice.id,testInvoice.vendorId,testInvoice.propertyId,testInvoice.reference,testInvoice.amount,testInvoice.paymentUrl]);
+    await db.exec(`set role authenticated; set test.uid='${actor}';`);
+    const start = async () => (await db.query<{ id: string }>("select start_mock_payment_agent($1) as id", [testInvoice.id])).rows[0].id;
+    const id = await start(); assert.equal(await start(), id);
+    await assert.rejects(db.query("update payment_agent_jobs set state='confirmed' where id=$1", [id]), /permission denied/);
+    await assert.rejects(db.query("select claim_mock_payment_agent()"), /permission denied/);
+    await assert.rejects(db.query("select authorize_mock_payment_agent($1)", [id]), /not ready/);
+    await db.exec("reset role; set role service_role;");
+    await assert.rejects(db.query("insert into payment_agent_jobs(invoice_id,requested_by,snapshot) select invoice_id,requested_by,snapshot from payment_agent_jobs where id=$1", [id]), /duplicate key/);
+    const claimed = (await db.query<{ id: string; lease_token: string }>("select * from claim_mock_payment_agent()")).rows[0];
+    assert.equal(claimed.id,id);
+    assert.equal((await db.query("select * from claim_mock_payment_agent()")).rows.length,0);
+    const advance = async (state: string) => db.query("select advance_mock_payment_agent($1,$2,$3)", [id,claimed.lease_token,state]);
+    await assert.rejects(advance("submitting"), /Invalid payment transition/);
+    await advance("awaiting_authorization");
+    await db.exec("reset role;");
+    await assert.rejects(db.query("update invoices set payment_confirmation_number='spoof',status='paid' where id=$1", [testInvoice.id]), /Cancel or reconcile/);
+    await assert.rejects(db.query("update vendors set account_number='different' where id=$1", [testInvoice.vendorId]), /Cancel or reconcile/);
+    await db.exec("set role authenticated;");
+    await db.query("select authorize_mock_payment_agent($1)", [id]);
+    await assert.rejects(db.query("select authorize_mock_payment_agent($1)", [id]), /not ready/);
+    await db.exec("reset role; set role service_role;");
+    await advance("submitting");
+    await assert.rejects(advance("submitting"), /Invalid payment transition/);
+    await db.exec("reset role; set role authenticated;");
+    await assert.rejects(db.query("select cancel_mock_payment_agent($1)", [id]), /cannot be cancelled/);
+    await db.exec("reset role; set role service_role;");
+    const receipt = { confirmation:"PAY-TEST",billId:testInvoice.reference,accountNumber:testInvoice.accountNumber,serviceAccountId:"legacy",amountCents:18642,status:"succeeded",portalOrigin:"https://alder-creek-utility-demo.vercel.app" };
+    await assert.rejects(db.query("select finalize_mock_payment_agent($1,$2,$3)", [id,claimed.lease_token,{...receipt,amountCents:1}]), /does not match/);
+    await db.query("select finalize_mock_payment_agent($1,$2,$3)", [id,claimed.lease_token,receipt]);
+    await db.query("select finalize_mock_payment_agent($1,$2,$3)", [id,claimed.lease_token,receipt]);
+    assert.equal((await db.query<{status:string}>("select status from invoices where id=$1",[testInvoice.id])).rows[0].status,"paid");
+    // Separate approved invoice exercises post-submit lease loss and retry blocking.
+    await db.exec("reset role;");
+    const nextInvoice = "10000000-0000-4000-8000-000000000002";
+    await db.query("insert into invoices(id,vendor_id,property_id,reference_number,amount,payment_url,status,payment_confirmation_number,deleted_at) select $1,vendor_id,property_id,'BILL-1002',amount,payment_url,'approved',null,null from invoices where id=$2",[nextInvoice,testInvoice.id]);
+    await db.exec("set role authenticated;");
+    const nextJob = (await db.query<{id:string}>("select start_mock_payment_agent($1) id",[nextInvoice])).rows[0].id;
+    await db.exec("reset role; set role service_role;");
+    await db.query("update payment_agent_jobs set state='submitting',lease_until=now()-interval '1 minute' where id=$1",[nextJob]);
+    await db.exec("select * from claim_mock_payment_agent();");
+    assert.equal((await db.query<{state:string}>("select state from payment_agent_jobs where id=$1",[nextJob])).rows[0].state,"needs_review");
+    await db.exec("reset role; set role authenticated;");
+    assert.equal((await db.query<{id:string}>("select start_mock_payment_agent($1) id",[nextInvoice])).rows[0].id,nextJob);
+  } finally { await db.close(); }
+});

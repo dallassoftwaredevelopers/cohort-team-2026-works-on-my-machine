@@ -406,6 +406,7 @@ export function InvoiceFormClient({ vendors: vendorsProp, properties: properties
           </CButton>}
         </div>
       </div>
+      {invoice && locked && <div className="mt-3"><Link href={`/invoices/${invoice.id}/payment`} className="btn btn-outline-primary">AI mock payment and history</Link></div>}
       {invoice && locked && <PaymentConfirmation invoiceId={invoice.id} confirmation={paymentConfirmation ?? null} readOnly={invoice.fields.status === "paid"} />}
       </section>
 
