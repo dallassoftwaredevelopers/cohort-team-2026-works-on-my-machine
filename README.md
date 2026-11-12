@@ -333,9 +333,27 @@ A positive comment is not necessarily a formal GitHub approving review.
 
 Do not push directly to `main` unless explicitly permitted by the team's repository rules.
 
-**Repository protection settings:** Confirm whether `main` branch protection is enabled. If changes require organization-admin permissions, document the outstanding request.
+**Repository protection settings:** The active [`main` ruleset](https://github.com/dallassoftwaredevelopers/cohort-team-2026-works-on-my-machine/rules/25132582) requires one approving review. It currently has no required status checks. The workflow reports validation on each PR. To make a passing result mandatory for merge, a repository or organization administrator with ruleset access must add the **Lint, types, tests, and build** check after its first run. Organization Actions policy must allow the checkout and setup-node actions.
 
 ## 9. Testing and Acceptance Criteria
+
+### Pull request validation
+
+The **PR validation** workflow runs when a pull request targeting `main` opens, reopens, or updates. GitHub shows the job and its step logs in the pull request's **Checks** tab.
+
+Run the same commands locally with Node.js 24. Set the two variables from [`frontend/.env.example`](frontend/.env.example) in your shell or `frontend/.env.local`. The CI build uses placeholder values and requires no Supabase credentials. The build downloads Geist fonts, so it needs access to Google Fonts.
+
+```bash
+cd frontend
+npm ci
+npm run lint
+npm exec -- next typegen
+npm exec -- tsc --noEmit
+npm test
+npm run build
+```
+
+These checks cover the Next.js frontend and server-side TypeScript, including the invoice extraction tests. They do not provision Supabase or run database migrations.
 
 ### Happy-Path Test
 
